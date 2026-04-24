@@ -1,5 +1,6 @@
 import { Bot, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import LanguageToggle from '../LanguageToggle';
 
 export default function ChatHeader({ isSpeechEnabled, setIsSpeechEnabled }) {
   const { t } = useLanguage();
@@ -19,6 +20,7 @@ export default function ChatHeader({ isSpeechEnabled, setIsSpeechEnabled }) {
         </p>
       </div>
       <div className="flex items-center gap-2">
+         <LanguageToggle className="!bg-white/10 !border-white/20 !text-white hover:!bg-white/20" />
          <button 
           onClick={() => setIsSpeechEnabled(!isSpeechEnabled)}
           className={`p-2.5 rounded-xl transition-all duration-300 ${isSpeechEnabled ? 'bg-white/10 text-white' : 'bg-red-500/20 text-red-100 border border-red-500/30'}`}

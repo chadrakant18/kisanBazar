@@ -12,8 +12,8 @@ export default function LanguageToggle({ className = '' }) {
         bg-white/90 border border-gray-200 shadow-sm hover:shadow-md
         hover:bg-green-50 transition-all duration-200 cursor-pointer ${className}`}
     >
-      <Globe size={16} className="text-green-700" />
-      <span className="text-green-800 font-semibold">
+      <Globe size={16} className={className.includes('text-white') ? "text-white" : "text-green-700"} />
+      <span className={`font-semibold ${className.includes('text-white') ? "text-white" : "text-green-800"}`}>
         {lang === 'en' ? 'ಕನ್ನಡ' : 'EN'}
       </span>
     </button>

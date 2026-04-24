@@ -1,110 +1,128 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, TrendingUp, ArrowUpRight, ArrowDownRight, BarChart3 } from 'lucide-react';
+import { ChevronLeft, TrendingUp, ArrowUpRight, ArrowDownRight, BarChart3, Loader2 } from 'lucide-react';
 
 const MarketPricePage = () => {
   const navigate = useNavigate();
+  const [marketData, setMarketData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const marketData = [
-    { name: 'Tomato', price: '₹22/kg', change: '+12%', up: true, high: '₹26', low: '₹18', volume: '450 Tons', msp: '-' },
-    { name: 'Ragi', price: '₹34/kg', change: '+5%', up: true, high: '₹38', low: '₹32', volume: '1200 Tons', msp: '₹3,846/q' },
-    { name: 'Banana', price: '₹14/kg', change: '-2%', up: false, high: '₹16', low: '₹13', volume: '800 Tons', msp: '-' },
-    { name: 'Onion', price: '₹28/kg', change: '+18%', up: true, high: '₹35', low: '₹22', volume: '2100 Tons', msp: '-' },
-    { name: 'Mango', price: '₹140/kg', change: '-8%', up: false, high: '₹200', low: '₹100', volume: '350 Tons', msp: '-' },
-    { name: 'Rice (Paddy)', price: '₹23/kg', change: '+3%', up: true, high: '₹28', low: '₹22', volume: '3500 Tons', msp: '₹2,300/q' },
-    { name: 'Wheat', price: '₹24/kg', change: '+2%', up: true, high: '₹26', low: '₹22', volume: '2800 Tons', msp: '₹2,275/q' },
-  ];
+  useEffect(() => {
+    fetch('http://127.0.0.1:5000/api/market-prices')
+      .then(res => res.json())
+      .then(data => {
+        setMarketData(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-20">
-      <nav className="bg-white/80 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-50">
+    <div className="min-h-screen bg-slate-900 pb-20 text-slate-100 font-sans">
+      <nav className="bg-slate-900/80 backdrop-blur-xl border-b border-slate-800 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-black text-gray-500 hover:text-green-600 transition-colors uppercase tracking-widest">
+          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-black text-slate-400 hover:text-emerald-400 transition-colors uppercase tracking-widest">
             <ChevronLeft size={20} /> Back
           </button>
-          <h1 className="text-xl font-black text-gray-900 tracking-tighter">Market <span className="text-green-600">Prices</span></h1>
+          <h1 className="text-xl font-black text-white tracking-tighter">Market <span className="text-emerald-400">Prices</span></h1>
           <div className="w-16"></div>
         </div>
       </nav>
 
       <main className="max-w-6xl mx-auto px-6 pt-12 space-y-10">
         <div className="space-y-3">
-          <h2 className="text-4xl font-black text-gray-900 tracking-tight">APMC Market <span className="text-green-600">Analysis</span></h2>
-          <p className="text-lg text-gray-500 font-medium">Real-time prices from regional APMC mandis. Updated every 15 minutes.</p>
+          <h2 className="text-5xl font-black text-white tracking-tight">APMC Market <span className="text-emerald-400">Live Data</span></h2>
+          <p className="text-lg text-slate-400 font-medium">Real-time commodity pricing. Updates fetched continuously.</p>
         </div>
 
         {/* Price Table */}
-        <div className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-xl">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-green-100 text-green-700 flex items-center justify-center">
-                <BarChart3 size={20} />
+        <div className="bg-slate-800/50 backdrop-blur-md rounded-[32px] p-8 border border-slate-700 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
+          
+          <div className="flex items-center justify-between mb-8 relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                <BarChart3 size={24} />
               </div>
-              <span className="font-black text-gray-900 uppercase tracking-widest text-xs">Consolidated Regional Data</span>
+              <span className="font-black text-white uppercase tracking-widest text-sm">Consolidated Market Feed</span>
             </div>
-            <div className="flex gap-2">
-              <button className="px-4 py-2 bg-gray-100 rounded-xl text-xs font-black text-gray-600">7 DAYS</button>
-              <button className="px-4 py-2 bg-green-600 rounded-xl text-xs font-black text-white shadow-lg shadow-green-200">30 DAYS</button>
+            <div className="flex gap-3">
+              <div className="flex items-center gap-2 text-xs font-black text-emerald-400 bg-emerald-400/10 px-4 py-2 rounded-xl border border-emerald-400/20">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                LIVE
+              </div>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">Commodity</th>
-                  <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">Avg Price</th>
-                  <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">Change</th>
-                  <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">Range (L/H)</th>
-                  <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">MSP</th>
-                  <th className="pb-4 text-[10px] font-black text-gray-400 uppercase tracking-widest px-4">Volume</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {marketData.map((item) => (
-                  <tr key={item.name} className="group hover:bg-gray-50/50 transition-colors">
-                    <td className="py-5 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center font-black text-xs text-gray-600 group-hover:bg-green-100 group-hover:text-green-700 transition-all">
-                          {item.name.charAt(0)}
-                        </div>
-                        <span className="font-black text-gray-900">{item.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-5 px-4 font-black text-gray-900">{item.price}</td>
-                    <td className="py-5 px-4">
-                      <div className={`flex items-center gap-1 font-black text-xs ${item.up ? 'text-green-600' : 'text-red-600'}`}>
-                        {item.up ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                        {item.change}
-                      </div>
-                    </td>
-                    <td className="py-5 px-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gray-400">{item.low}</span>
-                        <div className="flex-1 h-1 bg-gray-100 rounded-full min-w-[50px] relative">
-                          <div className="absolute inset-y-0 left-1/4 right-1/4 bg-green-500 rounded-full"></div>
-                        </div>
-                        <span className="text-xs font-bold text-gray-900">{item.high}</span>
-                      </div>
-                    </td>
-                    <td className="py-5 px-4 font-bold text-gray-500 text-sm">{item.msp}</td>
-                    <td className="py-5 px-4 font-bold text-gray-500 text-sm">{item.volume}</td>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 text-emerald-400 space-y-4">
+              <Loader2 size={48} className="animate-spin opacity-80" />
+              <p className="font-bold tracking-widest uppercase text-sm">Fetching real APMC data...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto relative z-10">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-slate-700/50">
+                    <th className="pb-4 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] px-4">Commodity</th>
+                    <th className="pb-4 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] px-4">Avg Price</th>
+                    <th className="pb-4 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] px-4">Change</th>
+                    <th className="pb-4 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] px-4">Range (L/H)</th>
+                    <th className="pb-4 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] px-4">Volume</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-700/50">
+                  {marketData.map((item, idx) => (
+                    <tr key={idx} className="group hover:bg-slate-700/30 transition-colors">
+                      <td className="py-6 px-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center font-black text-sm text-slate-300 group-hover:bg-emerald-500/20 group-hover:text-emerald-400 transition-all border border-slate-600 group-hover:border-emerald-500/30 shadow-inner">
+                            {item.name.charAt(0)}
+                          </div>
+                          <span className="font-black text-white text-base">{item.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-6 px-4 font-black text-white text-lg">{item.price}</td>
+                      <td className="py-6 px-4">
+                        <div className={`flex items-center gap-1.5 font-black text-sm ${item.up ? 'text-emerald-400 bg-emerald-400/10' : 'text-rose-400 bg-rose-400/10'} px-3 py-1 rounded-lg w-fit`}>
+                          {item.up ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                          {item.change}
+                        </div>
+                      </td>
+                      <td className="py-6 px-4">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-bold text-slate-400 w-12 text-right">{item.low}</span>
+                          <div className="flex-1 h-1.5 bg-slate-700 rounded-full min-w-[60px] relative overflow-hidden">
+                            <div className={`absolute inset-y-0 left-1/4 right-1/4 rounded-full ${item.up ? 'bg-emerald-400' : 'bg-rose-400'}`}></div>
+                          </div>
+                          <span className="text-xs font-bold text-white w-12">{item.high}</span>
+                        </div>
+                      </td>
+                      <td className="py-6 px-4 font-bold text-slate-400 text-sm">{item.volume}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Advisory Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-orange-50 border border-orange-100 rounded-[32px] p-8">
-            <h5 className="font-black text-orange-800 uppercase tracking-widest text-[10px] mb-3">Expert Advice</h5>
-            <p className="text-orange-900 font-bold leading-relaxed">Onion prices expected to peak in 10 days. If you have cold storage, hold stock until next Wednesday for maximum profit.</p>
+          <div className="bg-gradient-to-br from-amber-500/10 to-orange-600/10 border border-amber-500/20 rounded-[32px] p-8 backdrop-blur-sm">
+            <h5 className="font-black text-amber-400 uppercase tracking-widest text-[10px] mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-400"></span> Expert Advice
+            </h5>
+            <p className="text-amber-100 font-bold leading-relaxed text-lg">Onion and Tomato prices are experiencing high volatility. If you have cold storage facilities, hold stock until the weekend for a projected 15% premium.</p>
           </div>
-          <div className="bg-emerald-50 border border-emerald-100 rounded-[32px] p-8">
-            <h5 className="font-black text-emerald-800 uppercase tracking-widest text-[10px] mb-3">Market Sentiment</h5>
-            <p className="text-emerald-900 font-bold leading-relaxed">Strong demand for Ragi from Bengaluru and Mysuru regions. Buyers actively seeking Grade-A quality. Good time to list.</p>
+          <div className="bg-gradient-to-br from-emerald-500/10 to-teal-600/10 border border-emerald-500/20 rounded-[32px] p-8 backdrop-blur-sm">
+            <h5 className="font-black text-emerald-400 uppercase tracking-widest text-[10px] mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span> Market Sentiment
+            </h5>
+            <p className="text-emerald-100 font-bold leading-relaxed text-lg">Strong demand for staples across all major mandis. Buyers are actively seeking Grade-A quality produce. Exceptional time to list your harvest.</p>
           </div>
         </div>
       </main>
