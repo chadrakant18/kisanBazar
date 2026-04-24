@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, CloudRain, Wind, Droplets, Thermometer, Sun, CloudSun, Cloud, Umbrella, MapPin, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const WEATHER_CODES = {
   0: { desc: 'Clear Sky', icon: Sun },
@@ -28,12 +29,17 @@ const WEATHER_CODES = {
 
 const WeatherPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Default to Tumkur if user not found or coordinates missing
+  const lat = user?.latitude || 13.3389;
+  const lon = user?.longitude || 77.1011;
+  const locationName = user?.location || 'Tumkur, Karnataka';
+
   useEffect(() => {
-    // Fetching data for Tumkur, Karnataka (Approx lat/long)
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=13.3389&longitude=77.1011&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto')
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto`)
       .then(res => res.json())
       .then(data => {
         setWeatherData(data);
@@ -43,7 +49,7 @@ const WeatherPage = () => {
         console.error(err);
         setLoading(false);
       });
-  }, []);
+  }, [lat, lon]);
 
   if (loading || !weatherData) {
     return (
@@ -89,7 +95,7 @@ const WeatherPage = () => {
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Live Sensor Data
                 </div>
                 <h3 className="text-3xl font-black flex items-center gap-2">
-                  <MapPin size={28} className="text-sky-200" /> Tumkur, Karnataka
+                  <MapPin size={28} className="text-sky-200" /> {locationName}
                 </h3>
               </div>
               <div className="bg-white/10 p-5 rounded-3xl backdrop-blur-md border border-white/20 shadow-xl">

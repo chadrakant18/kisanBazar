@@ -1,11 +1,7 @@
-"""
-ML-based Intent Classifier using TF-IDF + Multinomial Naive Bayes
-for KisanBazaar AI Chatbot
-"""
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.pipeline import Pipeline
-import numpy as np
+# Force HAS_SKLEARN to False to save memory in constrained environment
+HAS_SKLEARN = False
+print("[INFO] scikit-learn disabled for memory efficiency. Using keyword-based classification.")
+
 import re
 
 # Training data for the ML classifier
@@ -85,38 +81,70 @@ KANNADA_KEYWORDS = {
 
 class IntentClassifier:
     def __init__(self):
-        self.pipeline = Pipeline([
-            ('tfidf', TfidfVectorizer(
-                max_features=500,
-                ngram_range=(1, 2),
-                stop_words='english',
-                lowercase=True
-            )),
-            ('clf', MultinomialNB(alpha=0.1))
-        ])
-        self._train()
+        if HAS_SKLEARN:
+            self.pipeline = Pipeline([
+                ('tfidf', TfidfVectorizer(
+                    max_features=500,
+                    ngram_range=(1, 2),
+                    stop_words='english',
+                    lowercase=True
+                )),
+                ('clf', MultinomialNB(alpha=0.1))
+            ])
+            self._train()
+        else:
+            print("[ML] Skill-based intent detection activated (Keyword mode)")
 
     def _train(self):
-        texts = [t for t, _ in TRAINING_DATA]
-        labels = [l for _, l in TRAINING_DATA]
-        self.pipeline.fit(texts, labels)
-        self.classes = self.pipeline.classes_
-        print(f"[ML] Intent classifier trained on {len(texts)} samples, {len(set(labels))} intents")
+        if HAS_SKLEARN:
+            texts = [t for t, _ in TRAINING_DATA]
+            labels = [l for _, l in TRAINING_DATA]
+            self.pipeline.fit(texts, labels)
+            self.classes = self.pipeline.classes_
+            print(f"[ML] Intent classifier trained on {len(texts)} samples, {len(set(labels))} intents")
 
     def predict(self, text):
-        """Predict intent. For Kannada text, use keyword matching; for English, use ML model."""
+        """Predict intent. For Kannada text, use keyword matching; for English, use ML model or keywords."""
         is_kannada = any('\u0C80' < c < '\u0CFF' for c in text)
 
         if is_kannada:
             return self._predict_kannada(text)
 
-        proba = self.pipeline.predict_proba([text.lower()])[0]
-        best_idx = np.argmax(proba)
-        confidence = proba[best_idx]
+        if HAS_SKLEARN:
+            proba = self.pipeline.predict_proba([text.lower()])[0]
+            best_idx = np.argmax(proba)
+            confidence = proba[best_idx]
 
-        if confidence < 0.25:
-            return 'general', confidence
-        return self.classes[best_idx], confidence
+            if confidence < 0.25:
+                return 'general', confidence
+            return self.classes[best_idx], confidence
+        else:
+            # Fallback keyword matching for English
+            return self._predict_english_keywords(text)
+
+    def _predict_english_keywords(self, text):
+        text = text.lower()
+        # Simple heuristic mapping for English
+        keywords = {
+            'season': ['season', 'when to', 'which month', 'time to sow', 'harvest time'],
+            'pricing': ['price', 'rate', 'cost', 'sell', 'market', 'msp', 'mandi'],
+            'pests': ['pest', 'disease', 'insect', 'fungus', 'leaf curl', 'spray', 'pesticide'],
+            'schemes': ['scheme', 'government', 'subsidy', 'loan', 'insurance', 'pm-kisan', 'kcc'],
+            'weather': ['weather', 'rain', 'forecast', 'temperature', 'monsoon'],
+            'growing': ['grow', 'cultivate', 'soil', 'water', 'fertilizer', 'yield', 'tips'],
+            'contact': ['help', 'contact', 'call', 'number', 'support']
+        }
+        
+        scores = {intent: 0 for intent in keywords}
+        for intent, kws in keywords.items():
+            for kw in kws:
+                if kw in text:
+                    scores[intent] += 1
+        
+        if any(scores.values()):
+            best = max(scores, key=scores.get)
+            return best, 0.6
+        return 'general', 0.5
 
     def _predict_kannada(self, text):
         scores = {}

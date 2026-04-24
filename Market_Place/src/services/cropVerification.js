@@ -7,7 +7,7 @@ export async function verifyCropPhoto(file) {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch('http://127.0.0.1:5000/api/verify-crop', {
+    const response = await fetch('http://127.0.0.1:5001/api/verify-crop', {
       method: 'POST',
       body: formData
     });

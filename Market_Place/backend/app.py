@@ -5,6 +5,16 @@ import time
 import requests
 from bs4 import BeautifulSoup
 from ml_model import IntentClassifier
+import os
+import re
+import sqlite3
+from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+print(f"DEBUG: GEMINI_API_KEY is: {GEMINI_API_KEY[:8] if GEMINI_API_KEY else 'None'}")
+# We will use direct requests instead of the SDK to avoid the hanging import issue
 
 app = Flask(__name__)
 CORS(app)
@@ -12,6 +22,59 @@ CORS(app)
 print("Loading ML models for Crop Verification and AI Assistant...")
 intent_classifier = IntentClassifier()
 time.sleep(1)
+
+# Database Setup
+DB_PATH = "kisanbazaar.db"
+
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS users
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  name TEXT,
+                  phone TEXT UNIQUE,
+                  password_hash TEXT,
+                  location TEXT,
+                  latitude REAL,
+                  longitude REAL,
+                  role TEXT,
+                  farm_size TEXT,
+                  primary_crops TEXT,
+                  business_name TEXT,
+                  produce_type TEXT,
+                  order_volume TEXT)''')
+    conn.commit()
+    conn.close()
+
+init_db()
+
+# Geocoding Helper for Karnataka Districts
+KARNATAKA_DISTRICTS = {
+    "ramanagara": {"lat": 12.7233, "lon": 77.2759},
+    "tumkur": {"lat": 13.3389, "lon": 77.1011},
+    "bengaluru": {"lat": 12.9716, "lon": 77.5946},
+    "mysuru": {"lat": 12.2958, "lon": 76.6394},
+    "mandya": {"lat": 12.5218, "lon": 76.8951},
+    "hassan": {"lat": 13.0072, "lon": 76.1029},
+    "chikkamagaluru": {"lat": 13.3161, "lon": 75.7720},
+    "shivamogga": {"lat": 13.9299, "lon": 75.5681},
+    "belagavi": {"lat": 15.8497, "lon": 74.4977},
+    "hubballi": {"lat": 15.3647, "lon": 75.1240},
+    "dharwad": {"lat": 15.4589, "lon": 75.0078},
+    "kalaburagi": {"lat": 17.3297, "lon": 76.8343},
+    "ballari": {"lat": 15.1394, "lon": 76.9214},
+    "vijayapura": {"lat": 16.8302, "lon": 75.7100},
+    "udupi": {"lat": 13.3409, "lon": 74.7421},
+    "dakshina kannada": {"lat": 12.8706, "lon": 74.8827},
+    "mangalore": {"lat": 12.8706, "lon": 74.8827},
+}
+
+def get_coords(location):
+    loc_lower = location.lower()
+    for district, coords in KARNATAKA_DISTRICTS.items():
+        if district in loc_lower:
+            return coords["lat"], coords["lon"]
+    return 12.9716, 77.5946 # Default to Bengaluru
 
 # Crop-specific knowledge base
 CROP_DB = {
@@ -81,11 +144,12 @@ CROP_DB = {
 }
 
 def find_crop_in_text(text):
-    text_lower = text.lower()
+    text_lower = f" {text.lower()} "
+    text_lower = re.sub(r'[^a-z\s]', ' ', text_lower)
     
-    # First check exact DB matches
+    # First check exact DB matches with word boundaries
     for crop in CROP_DB:
-        if crop in text_lower:
+        if re.search(r'\b' + re.escape(crop) + r'\b', text_lower):
             return crop
             
     # Then aliases
@@ -97,7 +161,7 @@ def find_crop_in_text(text):
         'bale': 'banana', 'kela': 'banana',
     }
     for alias, crop in aliases.items():
-        if alias in text_lower:
+        if re.search(r'\b' + re.escape(alias) + r'\b', text_lower):
             return crop
             
     # Then generic crops
@@ -110,7 +174,7 @@ def find_crop_in_text(text):
         'spinach', 'coriander', 'mint', 'coffee', 'tea', 'rubber', 'pepper', 'cardamom', 'clove'
     ]
     for crop in generic_crops:
-        if crop in text_lower:
+        if re.search(r'\b' + re.escape(crop) + r'\b', text_lower):
             return crop
             
     return None
@@ -140,82 +204,183 @@ def generate_chatbot_response(intent, text, lang='en'):
         })
         
         if is_kannada:
-            # Simple Kannada translation for crop-specific answers
             kannada_names = {'rice': 'ಭತ್ತ', 'wheat': 'ಗೋಧಿ', 'tomato': 'ಟೊಮೆಟೊ', 'onion': 'ಈರುಳ್ಳಿ', 'ragi': 'ರಾಗಿ', 'mango': 'ಮಾವು', 'banana': 'ಬಾಳೆ', 'lemon': 'ನಿಂಬೆ', 'potato': 'ಆಲೂಗಡ್ಡೆ', 'chilli': 'ಮೆಣಸಿನಕಾಯಿ', 'cotton': 'ಹತ್ತಿ', 'sugarcane': 'ಕಬ್ಬು', 'maize': 'ಮೆಕ್ಕೆಜೋಳ', 'coconut': 'ತೆಂಗು'}
             k_crop = kannada_names.get(crop, crop_title)
             
-            if is_generic:
-                db_k = {
-                    'season': 'ಪ್ರದೇಶಕ್ಕೆ ತಕ್ಕಂತೆ ಬದಲಾಗುತ್ತದೆ. ಮಳೆಗಾಲದ ಮುನ್ನ ಅಥವಾ ಚಳಿಗಾಲದಲ್ಲಿ ಬಿತ್ತನೆ.',
-                    'soil': 'ಉತ್ತಮ ನೀರು ಹರಿಯುವ ಫಲವತ್ತಾದ ಮಣ್ಣು.',
-                    'water': 'ಮಿತವಾದ ನೀರಿನ ಅಗತ್ಯವಿದೆ. ನೀರು ನಿಲ್ಲದಂತೆ ನೋಡಿಕೊಳ್ಳಿ.',
-                    'fertilizer': 'ಕೊಟ್ಟಿಗೆ ಗೊಬ್ಬರ ಮತ್ತು ಮಣ್ಣು ಪರೀಕ್ಷೆ ಆಧಾರಿತ ರಸಗೊಬ್ಬರ ಬಳಸಿ.',
-                    'varieties': 'ನಿಮ್ಮ ಹತ್ತಿರದ ಕೃಷಿ ವಿಜ್ಞಾನ ಕೇಂದ್ರ (KVK) ಸಂಪರ್ಕಿಸಿ.',
-                    'yield': 'ಮಣ್ಣಿನ ಆರೋಗ್ಯ ಮತ್ತು ಹವಾಮಾನದ ಮೇಲೆ ಆಧಾರಿತವಾಗಿದೆ.',
-                    'price': 'ಸ್ಥಳೀಯ APMC ಮಾರುಕಟ್ಟೆ ದರಗಳನ್ನು ಅವಲಂಬಿಸಿದೆ.'
-                }
-                db = db_k
-
-            if intent == 'season' or 'ಯಾವಾಗ' in text:
-                return f"🌾 {k_crop} ಬೆಳೆಯುವ ಕಾಲ:\n{db['season']}\n\n📋 ತಳಿಗಳು: {db['varieties']}\n💰 ಪ್ರಸ್ತುತ ಬೆಲೆ: {db['price']}"
+            prefix = f"ಖಂಡಿತ, {k_crop} ಬಗ್ಗೆ ಮಾಹಿತಿ ಇಲ್ಲಿದೆ:"
+            if intent == 'season':
+                return f"{prefix}\n\n🌾 **ಬೆಳೆಯುವ ಕಾಲ:** {db['season']}\n\n📋 **ತಳಿಗಳು:** {db['varieties']}\n💰 **ಬೆಲೆ:** {db['price']}"
             elif intent == 'pricing':
-                return f"💰 {k_crop} ಮಾರುಕಟ್ಟೆ ಬೆಲೆ:\n{db['price']}\n\n📊 ನಿರೀಕ್ಷಿತ ಇಳುವರಿ: {db['yield']}"
+                return f"{prefix}\n\n💰 **ಮಾರುಕಟ್ಟೆ ಬೆಲೆ:** {db['price']}\n📊 **ಇಳುವರಿ:** {db['yield']}"
             elif intent == 'growing':
-                return f"🌱 {k_crop} ಬೆಳೆಯುವ ವಿಧಾನ:\n\n🗓 ಕಾಲ: {db['season']}\n🌍 ಮಣ್ಣು: {db['soil']}\n💧 ನೀರು: {db['water']}\n🧪 ಗೊಬ್ಬರ: {db['fertilizer']}\n🌾 ತಳಿಗಳು: {db['varieties']}\n📦 ಇಳುವರಿ: {db['yield']}"
-            elif intent == 'pests':
-                return f"🐛 {k_crop} ಕೀಟ ನಿಯಂತ್ರಣ:\n- ರಸ ಹೀರುವ ಕೀಟಗಳಿಗೆ ಬೇವಿನ ಎಣ್ಣೆ (5ml/L) ಬಳಸಿ.\n- ಶಿಲೀಂಧ್ರ ರೋಗಗಳಿಗೆ: ಮ್ಯಾಂಕೋಜೆಬ್ 2g/L.\n- ಸರಿಯಾದ ಅಂತರ ಮತ್ತು ನೀರು ಹರಿಯುವಿಕೆ ಖಚಿತಪಡಿಸಿ.\n\n🌾 ಉತ್ತಮ ಇಳುವರಿ: {db['yield']}"
+                return f"{prefix}\n\n🌱 **ವಿಧಾನ:**\n🗓 ಕಾಲ: {db['season']}\n🌍 ಮಣ್ಣು: {db['soil']}\n💧 ನೀರು: {db['water']}\n🧪 ಗೊಬ್ಬರ: {db['fertilizer']}"
             else:
-                return f"📋 {k_crop} ಸಂಪೂರ್ಣ ಮಾಹಿತಿ:\n\n🗓 ಕಾಲ: {db['season']}\n🌍 ಮಣ್ಣು: {db['soil']}\n💧 ನೀರು: {db['water']}\n🧪 ಗೊಬ್ಬರ: {db['fertilizer']}\n🌾 ತಳಿಗಳು: {db['varieties']}\n📦 ಇಳುವರಿ: {db['yield']}\n💰 ಬೆಲೆ: {db['price']}"
+                return f"{prefix}\n\n🗓 ಕಾಲ: {db['season']}\n🌍 ಮಣ್ಣು: {db['soil']}\n💰 ಬೆಲೆ: {db['price']}\n📦 ಇಳುವರಿ: {db['yield']}"
         else:
-            if intent == 'season' or 'when' in text.lower():
-                return f"🌾 {crop_title} Growing Season:\n{db['season']}\n\n📋 Recommended Varieties: {db['varieties']}\n💰 Current Price: {db['price']}"
+            prefix = f"Sure! Here is the detailed information for **{crop_title}**:"
+            if intent == 'season':
+                return f"{prefix}\n\n🌾 **Growing Season:** {db['season']}\n\n📋 **Recommended Varieties:** {db['varieties']}\n💰 **Estimated Price:** {db['price']}"
             elif intent == 'pricing':
-                return f"💰 {crop_title} Market Price:\n{db['price']}\n\n📊 Expected Yield: {db['yield']}"
+                return f"{prefix}\n\n💰 **Current Market Rate:** {db['price']}\n📊 **Expected Yield:** {db['yield']}\n\n*Note: Prices vary daily at local APMC mandis.*"
             elif intent == 'growing':
-                return f"🌱 How to Grow {crop_title}:\n\n🗓 Season: {db['season']}\n🌍 Soil: {db['soil']}\n💧 Water: {db['water']}\n🧪 Fertilizer: {db['fertilizer']}\n🌾 Varieties: {db['varieties']}\n📦 Yield: {db['yield']}"
-            elif intent == 'pests':
-                return f"🐛 Pest Management for {crop_title}:\n- Use Neem Oil (5ml/L) for sucking pests.\n- For fungal diseases: Mancozeb 2g/L or Copper Oxychloride 3g/L.\n- Ensure proper spacing and drainage.\n- Crop rotation every 2-3 seasons reduces soil-borne diseases.\n\n🌾 Healthy {crop_title} Yield: {db['yield']}"
+                return f"{prefix}\n\n🌱 **Cultivation Guide:**\n- **Season:** {db['season']}\n- **Soil:** {db['soil']}\n- **Water:** {db['water']}\n- **Fertilizer:** {db['fertilizer']}\n- **Varieties:** {db['varieties']}"
             else:
-                return f"📋 {crop_title} Complete Guide:\n\n🗓 Season: {db['season']}\n🌍 Soil: {db['soil']}\n💧 Water: {db['water']}\n🧪 Fertilizer: {db['fertilizer']}\n🌾 Varieties: {db['varieties']}\n📦 Yield: {db['yield']}\n💰 Price: {db['price']}"
+                return f"{prefix}\n\n🗓 **Season:** {db['season']}\n🌍 **Soil:** {db['soil']}\n💰 **Price:** {db['price']}\n📦 **Yield:** {db['yield']}"
 
     # General intent responses
     if is_kannada:
         responses = {
-            'season': "ದಯವಿಟ್ಟು ಯಾವ ಬೆಳೆ ಎಂದು ತಿಳಿಸಿ. ಉದಾ: 'ಭತ್ತ ಯಾವಾಗ ಬೆಳೆಯಬೇಕು?' ಅಥವಾ 'ಗೋಧಿ ಬಿತ್ತನೆ ಸಮಯ'. ನಾನು ಭತ್ತ, ಗೋಧಿ, ಟೊಮೆಟೊ, ಈರುಳ್ಳಿ, ರಾಗಿ, ಮಾವು, ಬಾಳೆ ಬಗ್ಗೆ ಮಾಹಿತಿ ನೀಡಬಲ್ಲೆ.",
-            'pricing': "ಇಂದಿನ ಮಾರುಕಟ್ಟೆ:\n- ಟೊಮೆಟೊ: ₹18-26/kg\n- ರಾಗಿ: ₹3,400-3,800/ಕ್ವಿಂಟಲ್\n- ಈರುಳ್ಳಿ: ₹2,200-2,500/ಕ್ವಿಂಟಲ್\n- ಭತ್ತ: ₹2,200-2,800/ಕ್ವಿಂಟಲ್\n- ಮಾವು: ₹40-200/kg\n\nನಿರ್ದಿಷ್ಟ ಬೆಳೆಯ ಬೆಲೆಗೆ ಬೆಳೆ ಹೆಸರು ಹೇಳಿ.",
-            'pests': "ಕೀಟ ನಿಯಂತ್ರಣ:\n1. ರಸ ಹೀರುವ ಕೀಟ: ಬೇವಿನ ಎಣ್ಣೆ 5ml/L\n2. ಶಿಲೀಂಧ್ರ: ಮ್ಯಾಂಕೋಜೆಬ್ 2g/L\n3. ಬೆಳೆ ಪರಿವರ್ತನೆ ಅಗತ್ಯ\n\nಯಾವ ಬೆಳೆಗೆ ಸಮಸ್ಯೆ? ನಿರ್ದಿಷ್ಟ ಸಲಹೆ ನೀಡುತ್ತೇನೆ.",
-            'schemes': "ಸರ್ಕಾರಿ ಯೋಜನೆಗಳು:\n- PM-KISAN: ವರ್ಷಕ್ಕೆ ₹6,000\n- KCC: 4% ಬಡ್ಡಿದರ ಸಾಲ\n- PMFBY: ಬೆಳೆ ವಿಮೆ\n- ಕೃಷಿ ಭಾಗ್ಯ: ಕೃಷಿ ಹೊಂಡ ಸಬ್ಸಿಡಿ",
-            'weather': "ಹವಾಮಾನ: ಮುಂದಿನ 48 ಗಂಟೆ ಸಾಧಾರಣ ಮಳೆ. ತೇವಾಂಶ 75%+. ಕೀಟನಾಶಕ ಸಿಂಪಡಣೆ ಮುಂದೂಡಿ.",
-            'growing': "ಯಾವ ಬೆಳೆ ಬೆಳೆಯಬೇಕೆಂದು ಹೇಳಿ. ಉದಾ: 'ಭತ್ತ ಬೆಳೆಯುವ ವಿಧಾನ' ಅಥವಾ 'ರಾಗಿ ಬೆಳೆಸುವುದು ಹೇಗೆ'. ನಾನು ಸಂಪೂರ್ಣ ಮಾರ್ಗದರ್ಶನ ನೀಡುತ್ತೇನೆ.",
-            'contact': "ಸಹಾಯವಾಣಿ:\n- ರೈತ ಸಹಾಯವಾಣಿ: 1800-425-3553\n- ಕಿಸಾನ್ ಕಾಲ್ ಸೆಂಟರ್: 1551",
-            'general': "ನಮಸ್ಕಾರ! ನಾನು ಕಿಸಾನ್ ಮಿತ್ರ. ಬೆಳೆ ಹೆಸರು ಹೇಳಿ - ಉದಾ: 'ಭತ್ತ ಬೆಳೆಯುವುದು ಹೇಗೆ?', 'ಟೊಮೆಟೊ ಬೆಲೆ', 'ರಾಗಿ ಬಿತ್ತನೆ ಸಮಯ'. ನಾನು ನಿಖರ ಮಾಹಿತಿ ನೀಡುತ್ತೇನೆ."
+            'season': "ಈ ಋತುವಿನಲ್ಲಿ ನೀವು ಗೋಧಿ, ರಾಗಿ ಅಥವಾ ತರಕಾರಿಗಳನ್ನು ಬೆಳೆಯಬಹುದು. ನಿಮಗೆ ಯಾವ ನಿರ್ದಿಷ್ಟ ಬೆಳೆಯ ಬಗ್ಗೆ ತಿಳಿಯಬೇಕು?",
+            'pricing': "ಇಂದಿನ ಮಾರುಕಟ್ಟೆ ಅಂದಾಜು ದರಗಳು:\n• ಟೊಮೆಟೊ: ₹18-26/kg\n• ರಾಗಿ: ₹3,400-3,800/ಕ್ವಿಂಟಲ್\n• ಈರುಳ್ಳಿ: ₹22-35/kg\n\nಯಾವ ಬೆಳೆಯ ನಿಖರ ಬೆಲೆ ಬೇಕು?",
+            'pests': "ಕೀಟ ಬಾಧೆ ತಡೆಯಲು ಬೇವಿನ ಎಣ್ಣೆ ಅಥವಾ ಮಣ್ಣು ಪರೀಕ್ಷೆ ಆಧಾರಿತ ಸಿಂಪಡಣೆ ಮಾಡಿ. ಯಾವ ಬೆಳೆಗೆ ಸಮಸ್ಯೆ ಇದೆ?",
+            'schemes': "ರೈತರಿಗಾಗಿ PM-KISAN ಮತ್ತು ಬೆಳೆ ವಿಮೆ ಯೋಜನೆಗಳು ಲಭ್ಯವಿವೆ. ಹೆಚ್ಚಿನ ಮಾಹಿತಿಗಾಗಿ 'ಯೋಜನೆಗಳು' ಎಂದು ಕೇಳಿ.",
+            'weather': "ಮುಂದಿನ 48 ಗಂಟೆಗಳಲ್ಲಿ ಸಾಧಾರಣ ಮಳೆಯ ಮುನ್ಸೂಚನೆ ಇದೆ. ಹುಷಾರಾಗಿರಿ!",
+            'general': "ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ ಕಿಸಾನ್ ಮಿತ್ರ. ಬೆಳೆಗಳ ಬೆಲೆ, ಹವಾಮಾನ ಅಥವಾ ಕೃಷಿ ಸಲಹೆಗಾಗಿ ಕೇಳಿ. ಉದಾ: 'ಟೊಮೆಟೊ ಬೆಲೆ ಎಷ್ಟು?'"
         }
     else:
         responses = {
-            'season': "Please specify which crop! Example: 'When to grow rice?' or 'Wheat sowing time'.\n\nI have detailed info on: Rice, Wheat, Tomato, Onion, Ragi, Mango, Banana.",
-            'pricing': "📊 Today's Market Prices:\n- Tomato: ₹18-26/kg\n- Ragi: ₹3,400-3,800/quintal\n- Onion: ₹2,200-2,500/quintal\n- Rice: ₹2,200-2,800/quintal (MSP: ₹2,300)\n- Wheat: ₹2,275/quintal (MSP)\n- Mango: ₹40-200/kg\n\nAsk about a specific crop for detailed pricing!",
-            'pests': "🐛 General Pest Management:\n1. Sucking pests: Neem Oil 5ml/L water\n2. Fungal: Mancozeb 2g/L or Copper Oxychloride 3g/L\n3. Bacterial wilt: Remove infected plants, apply Streptocycline\n4. Always rotate crops every 2-3 seasons\n\nTell me which crop for specific advice!",
-            'schemes': "🏛 Government Schemes:\n- PM-KISAN: ₹6,000/year direct transfer\n- KCC: Loans at 4% interest\n- PMFBY: Crop insurance (covers post-harvest too)\n- Soil Health Card: Free soil testing\n- eNAM: Online trading platform",
-            'weather': "🌦 Agri-Weather:\nExpect moderate rain in next 48 hours. Humidity 80%+.\n\nAdvice:\n- Postpone spraying operations\n- Ensure field drainage is clear\n- Good time for transplanting paddy",
-            'growing': "Please tell me which crop! Example: 'How to grow rice?' or 'Tomato cultivation tips'.\n\nI can guide you on: Rice, Wheat, Tomato, Onion, Ragi, Mango, Banana.\n\nI'll provide season, soil, water, fertilizer, varieties, and yield info.",
-            'contact': "📞 Emergency Contacts:\n- Kisan Call Center: 1800-180-1551 (Toll-Free)\n- Agriculture Dept: 1551\n- Grama One Center for documentation",
-            'general': "Hello! I'm KisanMitra, your AI Farming Expert. 🌾\n\nAsk me about any crop:\n• 'When to grow wheat?'\n• 'Rice cultivation guide'\n• 'Tomato price today'\n• 'Pest control for onion'\n\nI have detailed info on Rice, Wheat, Tomato, Onion, Ragi, Mango & Banana!"
+            'season': "It's a great time to plan for the next cycle! Currently, crops like **Wheat, Ragi, and Vegetables** are performing well. Which crop are you interested in?",
+            'pricing': "📊 **Current Market Snapshot:**\n- **Tomato:** ₹18-26/kg\n- **Ragi:** ₹3,400-3,800/q\n- **Onion:** ₹22-35/kg\n- **Rice:** ₹2,200-2,800/q\n\nTell me which crop you want to check specifically!",
+            'pests': "I can help with pest management! 🐛 Are you seeing yellow leaves, spots, or insect damage? Please mention the crop name.",
+            'schemes': "There are several active schemes like **PM-KISAN** (income support) and **PMFBY** (insurance). Would you like the application details?",
+            'weather': "🌦 **Agri-Weather Update:**\nExpect moderate humidity and light showers in the coming days. It's a good time for organic manuring.",
+            'general': "Hello! I'm KisanMitra, your AI Farming Assistant. 🌾\n\nI can help you with:\n• **Market Prices** (e.g., 'What is the price of Onion?')\n• **Growing Guides** (e.g., 'How to grow Ragi?')\n• **Pest Control** & **Weather**\n\nWhat can I help you with today?"
         }
     return responses.get(intent, responses['general'])
+
+def generate_realtime_ai_response(message, lang='en'):
+    if not GEMINI_API_KEY:
+        return None
+    
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-latest:generateContent?key={GEMINI_API_KEY}"
+    
+    prompt = f"""You are KisanMitra, an expert AI agricultural assistant for the KisanBazaar marketplace. 
+    Please answer the following farming query clearly and accurately. 
+    If the user's query is in Kannada, you MUST reply in Kannada. 
+    If it is in English, reply in English.
+    Provide specific details regarding crops, market prices, pests, diseases, or seasons.
+    Keep the answer concise (under 150 words) and use markdown/emojis for readability.
+    
+    User's Query: {message}"""
+
+    payload = {
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }]
+    }
+    
+    try:
+        response = requests.post(url, json=payload, timeout=10)
+        response_data = response.json()
+        print(f"DEBUG: Gemini Response: {response_data}")
+        if 'candidates' in response_data and len(response_data['candidates']) > 0:
+            return response_data['candidates'][0]['content']['parts'][0]['text']
+        else:
+            print(f"Gemini API Error: {response_data}")
+            return None
+    except Exception as e:
+        print(f"Gemini Request Error: {e}")
+        return None
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.json
     message = data.get('message', '')
     lang = data.get('lang', 'en')
-    intent = predict_intent(message)
-    response_text = generate_chatbot_response(intent, message, lang)
-    time.sleep(0.3)
+    
+    is_kannada = ((lang == 'kn') or any(char > '\u0C80' and char < '\u0CFF' for char in message))
+    detected_lang = "kn" if is_kannada else "en"
+    
+    # Try getting real-time response from Gemini
+    response_text = None
+    if GEMINI_API_KEY:
+        response_text = generate_realtime_ai_response(message, detected_lang)
+        
+    intent = "general"
+    
+    # Fallback to local simulated mock DB if Gemini is not configured or failed
+    if not response_text:
+        intent = predict_intent(message)
+        response_text = generate_chatbot_response(intent, message, lang)
+        time.sleep(0.3)
+        
     return jsonify({
         "response": response_text,
         "intent": intent,
-        "language": "kn" if ((lang == 'kn') or any(char > '\u0C80' and char < '\u0CFF' for char in message)) else "en"
+        "language": detected_lang
     })
+
+@app.route('/api/register', methods=['POST'])
+def register():
+    data = request.json
+    name = data.get('name')
+    phone = data.get('phone')
+    password = data.get('password')
+    location = data.get('location', 'Bengaluru')
+    role = data.get('role', 'farmer')
+    
+    if not phone or not password:
+        return jsonify({"error": "Phone and password required"}), 400
+        
+    lat, lon = get_coords(location)
+    password_hash = generate_password_hash(password)
+    
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute('''INSERT INTO users 
+                     (name, phone, password_hash, location, latitude, longitude, role, 
+                      farm_size, primary_crops, business_name, produce_type, order_volume)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                  (name, phone, password_hash, location, lat, lon, role,
+                   data.get('farmSize'), data.get('primaryCrops'), 
+                   data.get('businessName'), data.get('produceType'), data.get('orderVolume')))
+        conn.commit()
+        user_id = c.lastrowid
+        conn.close()
+        
+        return jsonify({
+            "message": "User registered successfully",
+            "user": {
+                "id": user_id,
+                "name": name,
+                "phone": phone,
+                "location": location,
+                "lat": lat,
+                "lon": lon,
+                "role": role
+            }
+        })
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "Phone number already registered"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.json
+    phone = data.get('phone')
+    password = data.get('password')
+    
+    if not phone or not password:
+        return jsonify({"error": "Phone and password required"}), 400
+        
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM users WHERE phone = ?", (phone,))
+    user = c.fetchone()
+    conn.close()
+    
+    if user and check_password_hash(user['password_hash'], password):
+        user_data = dict(user)
+        del user_data['password_hash'] # Remove hash before sending to frontend
+        return jsonify({
+            "message": "Login successful",
+            "user": user_data
+        })
+    
+    return jsonify({"error": "Invalid phone number or password"}), 401
 
 @app.route('/api/market-prices', methods=['GET'])
 def get_market_prices():
@@ -296,4 +461,4 @@ def verify_crop():
 
 if __name__ == '__main__':
     print("Python ML Backend running on http://127.0.0.1:5000")
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    app.run(host='127.0.0.1', port=5001, debug=True)

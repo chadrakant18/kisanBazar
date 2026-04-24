@@ -32,7 +32,7 @@ export default function AuthPage({ mode }) {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -41,28 +41,19 @@ export default function AuthPage({ mode }) {
       return;
     }
 
-    const userData = {
-      name: formData.name || (isFarmer ? 'Ramesh Kumar' : 'Karnataka Traders'),
-      phone: formData.phone || '9876543210',
-      location: formData.location || 'Ramanagara',
-      role: role,
-      ...(isFarmer ? {
-        farmSize: formData.farmSize || '5',
-        primaryCrops: formData.primaryCrops || 'Tomato, Ragi',
-      } : {
-        businessName: formData.businessName || 'Karnataka Traders',
-        produceType: formData.produceType || 'Vegetables',
-        orderVolume: formData.orderVolume || '500 kg/week',
-      }),
-    };
-
-    if (isLogin) {
-      login(userData);
-    } else {
-      registerUser(userData);
+    try {
+      if (isLogin) {
+        await login({ phone: formData.phone, password: formData.password });
+      } else {
+        await registerUser({
+          ...formData,
+          role: role
+        });
+      }
+      navigate(isFarmer ? '/farmer/dashboard' : '/buyer/dashboard');
+    } catch (err) {
+      setError(err.message);
     }
-
-    navigate(isFarmer ? '/farmer/dashboard' : '/buyer/dashboard');
   };
 
   return (

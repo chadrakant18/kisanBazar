@@ -8,7 +8,7 @@ const MarketPricePage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/api/market-prices')
+    fetch('http://127.0.0.1:5001/api/market-prices')
       .then(res => res.json())
       .then(data => {
         setMarketData(data);
