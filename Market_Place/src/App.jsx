@@ -8,6 +8,9 @@ import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import FarmerDashboard from './pages/FarmerDashboard';
 import BuyerDashboard from './pages/BuyerDashboard';
+import IntelligenceHub from './pages/IntelligenceHub';
+import WeatherPage from './pages/WeatherPage';
+import MarketPricePage from './pages/MarketPricePage';
 
 function App() {
   return (
@@ -23,6 +26,9 @@ function App() {
                   <Route path="/register/:role" element={<AuthPage mode="register" />} />
                   <Route path="/farmer/dashboard" element={<FarmerDashboard />} />
                   <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
+                  <Route path="/intelligence" element={<IntelligenceHub />} />
+                  <Route path="/weather" element={<WeatherPage />} />
+                  <Route path="/market-prices" element={<MarketPricePage />} />
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </main>

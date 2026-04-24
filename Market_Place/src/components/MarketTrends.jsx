@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingUp, ArrowUpRight, ArrowDownRight, Info } from 'lucide-react';
 
-const MarketTrends = () => {
+const MarketTrends = ({ onViewDetails }) => {
   const trends = [
     { name: 'Tomato', price: '₹22/kg', change: '+12%', up: true },
     { name: 'Ragi', price: '₹34/kg', change: '+5%', up: true },
@@ -50,7 +50,10 @@ const MarketTrends = () => {
         ))}
       </div>
 
-      <button className="w-full mt-8 py-4 bg-gray-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] hover:bg-black transition-all shadow-xl shadow-gray-900/10">
+      <button 
+        onClick={onViewDetails}
+        className="w-full mt-8 py-4 bg-gray-900 text-white rounded-2xl font-black text-sm tracking-[0.2em] hover:bg-black transition-all shadow-xl shadow-gray-900/10"
+      >
         VIEW FULL REPORT
       </button>
     </div>

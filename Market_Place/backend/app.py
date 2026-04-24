@@ -1,64 +1,158 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import math
 import random
 import time
 
 app = Flask(__name__)
 CORS(app)
 
-# Dummy ML logic using plain Python to simulate a model. 
-# Real scikit-learn models or huggingface pipelines could be added here, 
-# but this script mimics their behavior to keep installation lightweight and reliable.
-
 print("Loading ML models for Crop Verification and AI Assistant...")
-# Simulate model loading time
-time.sleep(1) 
+time.sleep(1)
+
+# Crop-specific knowledge base
+CROP_DB = {
+    'rice': {
+        'season': 'Kharif (June-July). Sow after first monsoon rains. Harvest in 120-150 days (Oct-Nov).',
+        'soil': 'Clay or loamy soil with good water retention. pH 5.5-6.5.',
+        'water': 'Requires standing water (5-7cm) during most of its growth. Total: 1200-1400mm.',
+        'fertilizer': 'Apply Urea 50kg/acre at transplanting, then 25kg at tillering and panicle stages.',
+        'varieties': 'Sona Masuri, IR-64, Jaya, BPT-5204 (Samba Mahsuri), Basmati-370.',
+        'yield': '15-25 quintals/acre depending on variety and management.',
+        'price': '₹2,200-2,800/quintal (MSP: ₹2,300/quintal for 2025-26).'
+    },
+    'wheat': {
+        'season': 'Rabi (Nov-Dec). Sow after Kharif harvest when temp drops below 25°C. Harvest in March-April.',
+        'soil': 'Well-drained loamy soil. pH 6.0-7.5. Avoid waterlogged fields.',
+        'water': 'Needs 4-6 irrigations. Critical stages: Crown Root (21 days), Tillering, Flowering, Grain filling.',
+        'fertilizer': 'DAP 50kg + Urea 50kg/acre at sowing. Top dress Urea 25kg at 21 and 45 days.',
+        'varieties': 'HD-2967, PBW-343, Lok-1, GW-322, DBW-17.',
+        'yield': '18-22 quintals/acre with good management.',
+        'price': '₹2,275/quintal (MSP for 2025-26). Market may go ₹2,400-2,600.'
+    },
+    'tomato': {
+        'season': 'Can be grown year-round. Best: Rabi (Oct-Nov) and Summer (Jan-Feb). Avoid heavy monsoon.',
+        'soil': 'Sandy loam to clay loam, well-drained. pH 6.0-7.0.',
+        'water': 'Drip irrigation recommended. 2-3 liters/plant/day. Avoid overhead watering.',
+        'fertilizer': '10 tons FYM/acre + NPK 50:60:50 kg/acre. Calcium spray to prevent blossom end rot.',
+        'varieties': 'Arka Rakshak, NS-501, US-618, Arka Samrat (hybrid).',
+        'yield': '80-120 quintals/acre. High-value crop.',
+        'price': '₹15-40/kg depending on season. Peak prices in summer (May-June).'
+    },
+    'onion': {
+        'season': 'Kharif: May-June (harvest Sep-Oct). Rabi: Oct-Nov (harvest Feb-Mar). Late Kharif: Aug-Sep.',
+        'soil': 'Fertile, well-drained sandy loam. pH 6.0-7.0. Raised beds recommended.',
+        'water': 'Light but frequent irrigation. Stop watering 10 days before harvest for better storage.',
+        'fertilizer': 'FYM 10 tons + NPK 40:40:60 kg/acre. Sulphur 20kg/acre improves pungency.',
+        'varieties': 'Bellary Red, N-53, Arka Kalyan, Agrifound Dark Red, Pusa Ratnar.',
+        'yield': '100-150 quintals/acre.',
+        'price': '₹18-35/kg. Prices spike during Jun-Aug gap period.'
+    },
+    'ragi': {
+        'season': 'Kharif: June-July. Can also be grown in Rabi with irrigation. 100-130 days crop.',
+        'soil': 'Red sandy loam or laterite soil. Tolerates poor soil. pH 5.0-7.5.',
+        'water': 'Drought tolerant. 400-500mm rainfall sufficient. 3-4 irrigations if no rain.',
+        'fertilizer': 'FYM 5 tons + NPK 25:20:15 kg/acre. Finger millet responds well to FYM.',
+        'varieties': 'GPU-28, GPU-67, MR-1, L-5, HR-911.',
+        'yield': '8-12 quintals/acre.',
+        'price': '₹3,400-3,800/quintal. High demand for health foods market.'
+    },
+    'mango': {
+        'season': 'Plant saplings in June-August (monsoon). Fruiting starts after 5-6 years. Harvest: April-July.',
+        'soil': 'Deep alluvial or laterite soil with good drainage. pH 5.5-7.5.',
+        'water': 'Young trees: weekly. Mature: reduce watering during flowering (Jan-Feb) for better yield.',
+        'fertilizer': '10kg FYM + 1kg Urea + 1kg SSP per tree per year of age (max 10 years).',
+        'varieties': 'Alphonso, Banganapalli, Totapuri, Dashehari, Mallika, Amrapali.',
+        'yield': '100-200 fruits/tree (mature). 8-10 tonnes/acre.',
+        'price': '₹40-200/kg depending on variety. Alphonso premium: ₹150-300/kg.'
+    },
+    'banana': {
+        'season': 'Plant year-round. Best: June-July or Oct-Nov. Harvest after 11-14 months.',
+        'soil': 'Rich loamy soil with good drainage and organic matter. pH 6.0-7.5.',
+        'water': 'Heavy water requirement: 25-30 liters/plant/day. Drip irrigation saves 40% water.',
+        'fertilizer': '200g Urea + 200g MOP + 100g SSP per plant per year in split doses.',
+        'varieties': 'Grand Naine (G-9), Robusta, Yelakki (Elaichi), Red Banana, Nendran.',
+        'yield': '25-35 tonnes/acre.',
+        'price': '₹10-25/kg. Nendran and Yelakki fetch premium prices.'
+    }
+}
+
+def find_crop_in_text(text):
+    text_lower = text.lower()
+    for crop in CROP_DB:
+        if crop in text_lower:
+            return crop
+    aliases = {
+        'paddy': 'rice', 'bhatta': 'rice', 'dhan': 'rice',
+        'godhuma': 'wheat', 'godi': 'wheat',
+        'kanda': 'onion', 'eerulli': 'onion',
+        'maavu': 'mango', 'aam': 'mango',
+        'bale': 'banana', 'kela': 'banana',
+    }
+    for alias, crop in aliases.items():
+        if alias in text_lower:
+            return crop
+    return None
 
 def predict_intent(text):
     text = text.lower()
-    # Comprehensive intent mapping with expanded keyword sets
     intents = {
-        'pricing': ['ಬೆಲೆ', 'ದರ', 'ರೇಟ್', 'ಅಂದಾಜು', 'ಲಾಭ', 'ಮಾರುಕಟ್ಟೆ', 'ಮಾರಾಟ', 'price', 'rate', 'cost', 'market', 'how much', 'profit', 'value', 'sell', 'trading'],
-        'pests': ['ರೋಗ', 'ಕೀಟ', 'ಹುಳು', 'ಬರ', 'ಸರ', 'ಹಾನಿ', 'ಕೊಳೆ', 'ಚುಕ್ಕೆ', 'pest', 'disease', 'rot', 'insect', 'leaf', 'fungus', 'spray', 'pesticide', 'damage', 'infection', 'whitefly', 'aphids'],
-        'schemes': ['ಯೋಜನೆ', 'ಸರ್ಕಾರ', 'ಸಬ್ಸಿಡಿ', 'ಸಾಲ', 'ಅರ್ಜಿ', 'ಕಂತು', 'ಪರಿಹಾರ', 'ಭೀಮಾ', 'scheme', 'subsidy', 'loan', 'government', 'pm-kisan', 'kcc', 'insurance', 'pmfby', 'benefit', 'form', 'apply'],
-        'weather': ['ಮಳೆ', 'ಹವಾಮಾನ', 'ಬಿಸಿಲು', 'ಗಾಳಿ', 'ವೆದರ್', 'ಮೋಡ', 'ಮಿಂಚು', 'weather', 'rain', 'forecast', 'temperature', 'monsoon', 'cloud', 'humidity', 'storm'],
-        'growing': ['ಬೆಳೆ', 'ಬಿತ್ತನೆ', 'ಗೊಬ್ಬರ', 'ನೀರು', 'ಮಣ್ಣು', 'ಉಳುಮೆ', 'ತಳಿ', 'ಇಳುವರಿ', 'grow', 'plant', 'harvest', 'crop', 'soil', 'yield', 'fertilizer', 'irrigation', 'seeds', 'variety', 'cultivation'],
-        'contact': ['ಸಹಾಯ', 'ಸಂಪರ್ಕ', 'ಹೆಲ್ಪ್', 'ಹೆಲ್ಪ್‌ಲೈನ್', 'ನಂಬರ್', 'ಕರೆ', 'ಮಾಹಿತಿ', 'contact', 'help', 'helpline', 'number', 'support', 'call', 'info', 'emergency']
+        'season': ['when', 'season', 'time', 'month', 'sow', 'sowing', 'plant', 'planting', 'ಯಾವಾಗ', 'ಕಾಲ', 'ಋತು', 'ಬಿತ್ತನೆ'],
+        'pricing': ['price', 'rate', 'cost', 'market', 'how much', 'profit', 'sell', 'msp', 'ಬೆಲೆ', 'ದರ', 'ರೇಟ್', 'ಮಾರುಕಟ್ಟೆ'],
+        'pests': ['pest', 'disease', 'rot', 'insect', 'leaf', 'fungus', 'spray', 'pesticide', 'damage', 'yellow', 'wilt', 'blight', 'ರೋಗ', 'ಕೀಟ', 'ಹುಳು'],
+        'schemes': ['scheme', 'subsidy', 'loan', 'government', 'pm-kisan', 'kcc', 'insurance', 'pmfby', 'ಯೋಜನೆ', 'ಸರ್ಕಾರ', 'ಸಬ್ಸಿಡಿ'],
+        'weather': ['weather', 'rain', 'forecast', 'temperature', 'monsoon', 'ಮಳೆ', 'ಹವಾಮಾನ'],
+        'growing': ['grow', 'how to', 'tips', 'guide', 'method', 'technique', 'cultivat', 'harvest', 'soil', 'water', 'fertiliz', 'irrigat', 'yield', 'variety', 'seed', 'ಬೆಳೆ', 'ಗೊಬ್ಬರ', 'ನೀರು', 'ಮಣ್ಣು', 'ಇಳುವರಿ'],
+        'contact': ['contact', 'help', 'helpline', 'number', 'support', 'call', 'emergency', 'ಸಹಾಯ', 'ಸಂಪರ್ಕ']
     }
-    
-    # Simple score-based matching
     scores = {intent: 0 for intent in intents}
     for intent, keywords in intents.items():
         for keyword in keywords:
             if keyword in text:
                 scores[intent] += 1
-    
     best_intent = max(scores, key=scores.get)
     return best_intent if scores[best_intent] > 0 else 'general'
 
 def generate_chatbot_response(intent, text):
     is_kannada = any(char > '\u0C80' and char < '\u0CFF' for char in text)
-    
+    crop = find_crop_in_text(text)
+
+    # Crop-specific answers
+    if crop and crop in CROP_DB:
+        db = CROP_DB[crop]
+        crop_title = crop.capitalize()
+        if intent == 'season' or 'when' in text.lower():
+            return f"🌾 {crop_title} Growing Season:\n{db['season']}\n\n📋 Recommended Varieties: {db['varieties']}\n💰 Current Price: {db['price']}"
+        elif intent == 'pricing':
+            return f"💰 {crop_title} Market Price:\n{db['price']}\n\n📊 Expected Yield: {db['yield']}"
+        elif intent == 'growing':
+            return f"🌱 How to Grow {crop_title}:\n\n🗓 Season: {db['season']}\n🌍 Soil: {db['soil']}\n💧 Water: {db['water']}\n🧪 Fertilizer: {db['fertilizer']}\n🌾 Varieties: {db['varieties']}\n📦 Yield: {db['yield']}"
+        elif intent == 'pests':
+            return f"🐛 Pest Management for {crop_title}:\n- Use Neem Oil (5ml/L) for sucking pests.\n- For fungal diseases: Mancozeb 2g/L or Copper Oxychloride 3g/L.\n- Ensure proper spacing and drainage.\n- Crop rotation every 2-3 seasons reduces soil-borne diseases.\n\n🌾 Healthy {crop_title} Yield: {db['yield']}"
+        else:
+            return f"📋 {crop_title} Complete Guide:\n\n🗓 Season: {db['season']}\n🌍 Soil: {db['soil']}\n💧 Water: {db['water']}\n🧪 Fertilizer: {db['fertilizer']}\n🌾 Varieties: {db['varieties']}\n📦 Yield: {db['yield']}\n💰 Price: {db['price']}"
+
+    # General intent responses
     if is_kannada:
         responses = {
-            'pricing': "ಇಂದಿನ ಮಾರುಕಟ್ಟೆ ಅಪ್‌ಡೇಟ್: \n- ಟೊಮೆಟೊ (ಬೆಂಗಳೂರು): ₹18-26/kg \n- ರಾಗಿ: ₹3,400-3,800/ಕ್ವಿಂಟಲ್ \n- ಈರುಳ್ಳಿ: ₹2,200-2,500/ಕ್ವಿಂಟಲ್. \nಬೇಡಿಕೆ ಹೆಚ್ಚಿರುವುದರಿಂದ ಬೆಲೆಗಳು ಏರಿಕೆಯಾಗುವ ಸಾಧ್ಯತೆಯಿದೆ.",
-            'pests': "ಬೆಳೆಯಲ್ಲಿ ಕೀಟ/ರೋಗ ಬಾಧೆ ತಡೆಗಟ್ಟಲು: \n1. ಎಲೆಗಳ ಮೇಲೆ ಕಪ್ಪು ಚುಕ್ಕೆಗಳಿದ್ದರೆ 2 ಗ್ರಾಂ ಮ್ಯಾಂಕೋಜೆಬ್ ಬಳಸಿ. \n2. ರಸ ಹೀರುವ ಕೀಟಗಳಿಗೆ ಬೇವಿನ ಎಣ್ಣೆ (Neem Oil) ಅತ್ಯುತ್ತಮ. \n3. ಹೊಲದಲ್ಲಿ ನೀರು ನಿಲ್ಲದಂತೆ ಎಚ್ಚರವಹಿಸಿ.",
-            'schemes': "ಪ್ರಮುಖ ಸರ್ಕಾರಿ ಯೋಜನೆಗಳು: \n- PM-KISAN: ವರ್ಷಕ್ಕೆ ₹6,000 ನೇರ ವರ್ಗಾವಣೆ. \n- ಬೆಳೆ ವಿಮೆ (PMFBY): ಕೊನೆಯ ದಿನಾಂಕ ಹತ್ತಿರದಲ್ಲಿದೆ, ಕೂಡಲೇ ನೋಂದಾಯಿಸಿ. \n- ಕಿಸಾನ್ ಕ್ರೆಡಿಟ್ ಕಾರ್ಡ್: ಕಡಿಮೆ ಬಡ್ಡಿದರದಲ್ಲಿ ಸಾಲ ಸೌಲಭ್ಯ.",
-            'weather': "ಹವಾಮಾನ ಮುನ್ಸೂಚನೆ: \nಮುಂದಿನ 48 ಗಂಟೆಗಳಲ್ಲಿ ಸಾಧಾರಣದಿಂದ ಭಾರೀ ಮಳೆಯಾಗುವ ಸಾಧ್ಯತೆಯಿದೆ. ತೇವಾಂಶವು 75% ಕ್ಕಿಂತ ಹೆಚ್ಚಿರಲಿದೆ. ಕೀಟನಾಶಕ ಸಿಂಪಡಣೆಯನ್ನು ಸದ್ಯಕ್ಕೆ ಮುಂದೂಡಿ.",
-            'growing': "ಕೃಷಿ ಸಲಹೆಗಳು: \n- ಮಣ್ಣಿನ ಗುಣಮಟ್ಟ ಪರೀಕ್ಷಿಸಿ ಗೊಬ್ಬರ ಬಳಸಿ. \n- ಉತ್ತಮ ಇಳುವರಿಗಾಗಿ 'ಸೋನಾ ಮಸೂರಿ' ಅಥವಾ 'ಜಯ' ಭತ್ತದ ತಳಿಗಳನ್ನು ಬಳಸಿ. \n- ಹನಿ ನೀರಾವರಿ ಪದ್ಧತಿಯಿಂದ 40% ನೀರು ಉಳಿಸಬಹುದು.",
-            'contact': "ಸಹಾಯಕ್ಕಾಗಿ ಇವುಗಳನ್ನು ಸಂಪರ್ಕಿಸಿ: \n- ರೈತ ಸಹಾಯವಾಣಿ: 1800-425-3553 \n- ಕಿಸಾನ್ ಕಾಲ್ ಸೆಂಟರ್: 1551 \n- ನಿಮ್ಮ ಹತ್ತಿರದ ರೈತ ಸಂಪರ್ಕ ಕೇಂದ್ರ (RSK).",
-            'general': "ನಮಸ್ಕಾರ! ನಾನು ಕಿಸಾನ್ ಮಿತ್ರ. ನಾನು ನಿಮಗೆ ಬೆಳೆ ಬೆಲೆ, ಕೀಟ ನಿಯಂತ್ರಣ, ಮತ್ತು ಸರ್ಕಾರಿ ಯೋಜನೆಗಳ ಬಗ್ಗೆ ನಿಖರ ಮಾಹಿತಿ ನೀಡಬಲ್ಲೆ. ನೀವು ಏನನ್ನು ತಿಳಿಯಲು ಬಯಸುತ್ತೀರಿ?"
+            'season': "ದಯವಿಟ್ಟು ಯಾವ ಬೆಳೆ ಎಂದು ತಿಳಿಸಿ. ಉದಾ: 'ಭತ್ತ ಯಾವಾಗ ಬೆಳೆಯಬೇಕು?' ಅಥವಾ 'ಗೋಧಿ ಬಿತ್ತನೆ ಸಮಯ'. ನಾನು ಭತ್ತ, ಗೋಧಿ, ಟೊಮೆಟೊ, ಈರುಳ್ಳಿ, ರಾಗಿ, ಮಾವು, ಬಾಳೆ ಬಗ್ಗೆ ಮಾಹಿತಿ ನೀಡಬಲ್ಲೆ.",
+            'pricing': "ಇಂದಿನ ಮಾರುಕಟ್ಟೆ:\n- ಟೊಮೆಟೊ: ₹18-26/kg\n- ರಾಗಿ: ₹3,400-3,800/ಕ್ವಿಂಟಲ್\n- ಈರುಳ್ಳಿ: ₹2,200-2,500/ಕ್ವಿಂಟಲ್\n- ಭತ್ತ: ₹2,200-2,800/ಕ್ವಿಂಟಲ್\n- ಮಾವು: ₹40-200/kg\n\nನಿರ್ದಿಷ್ಟ ಬೆಳೆಯ ಬೆಲೆಗೆ ಬೆಳೆ ಹೆಸರು ಹೇಳಿ.",
+            'pests': "ಕೀಟ ನಿಯಂತ್ರಣ:\n1. ರಸ ಹೀರುವ ಕೀಟ: ಬೇವಿನ ಎಣ್ಣೆ 5ml/L\n2. ಶಿಲೀಂಧ್ರ: ಮ್ಯಾಂಕೋಜೆಬ್ 2g/L\n3. ಬೆಳೆ ಪರಿವರ್ತನೆ ಅಗತ್ಯ\n\nಯಾವ ಬೆಳೆಗೆ ಸಮಸ್ಯೆ? ನಿರ್ದಿಷ್ಟ ಸಲಹೆ ನೀಡುತ್ತೇನೆ.",
+            'schemes': "ಸರ್ಕಾರಿ ಯೋಜನೆಗಳು:\n- PM-KISAN: ವರ್ಷಕ್ಕೆ ₹6,000\n- KCC: 4% ಬಡ್ಡಿದರ ಸಾಲ\n- PMFBY: ಬೆಳೆ ವಿಮೆ\n- ಕೃಷಿ ಭಾಗ್ಯ: ಕೃಷಿ ಹೊಂಡ ಸಬ್ಸಿಡಿ",
+            'weather': "ಹವಾಮಾನ: ಮುಂದಿನ 48 ಗಂಟೆ ಸಾಧಾರಣ ಮಳೆ. ತೇವಾಂಶ 75%+. ಕೀಟನಾಶಕ ಸಿಂಪಡಣೆ ಮುಂದೂಡಿ.",
+            'growing': "ಯಾವ ಬೆಳೆ ಬೆಳೆಯಬೇಕೆಂದು ಹೇಳಿ. ಉದಾ: 'ಭತ್ತ ಬೆಳೆಯುವ ವಿಧಾನ' ಅಥವಾ 'ರಾಗಿ ಬೆಳೆಸುವುದು ಹೇಗೆ'. ನಾನು ಸಂಪೂರ್ಣ ಮಾರ್ಗದರ್ಶನ ನೀಡುತ್ತೇನೆ.",
+            'contact': "ಸಹಾಯವಾಣಿ:\n- ರೈತ ಸಹಾಯವಾಣಿ: 1800-425-3553\n- ಕಿಸಾನ್ ಕಾಲ್ ಸೆಂಟರ್: 1551",
+            'general': "ನಮಸ್ಕಾರ! ನಾನು ಕಿಸಾನ್ ಮಿತ್ರ. ಬೆಳೆ ಹೆಸರು ಹೇಳಿ - ಉದಾ: 'ಭತ್ತ ಬೆಳೆಯುವುದು ಹೇಗೆ?', 'ಟೊಮೆಟೊ ಬೆಲೆ', 'ರಾಗಿ ಬಿತ್ತನೆ ಸಮಯ'. ನಾನು ನಿಖರ ಮಾಹಿತಿ ನೀಡುತ್ತೇನೆ."
         }
     else:
         responses = {
-            'pricing': "Market Intelligence Report: \n- Tomato (Kolar): ₹18-26/kg \n- Ragi: ₹3,400-3,800/quintal \n- Onion: ₹2,200-2,500/quintal. \nExpect a 5-10% price rise in the next week due to high demand.",
-            'pests': "Integrated Pest Management Tips: \n1. For Whitefly/Aphids, use 5ml Neem Oil per liter of water. \n2. For fungal infections, apply Copper Oxychloride (3g/L). \n3. Ensure proper crop rotation to break pest cycles.",
-            'schemes': "Active Schemes for You: \n- PM-KISAN: ₹6,000 annual support. \n- KCC (Kisan Credit Card): Loans at 4% effective interest rate. \n- PMFBY: Insurance covers post-harvest losses too.",
-            'weather': "Agri-Weather Forecast: \nExpect moderate thunderstorms in the next 48 hours. Humidity levels will be high (80%). Avoid fertilizer application until the weather clears.",
-            'growing': "Cultivation Expert Advice: \n- Test your soil pH before planting. \n- For high yield, use certified hybrid seeds. \n- Balanced NPK ratio (4:2:1) is recommended for most cereal crops.",
-            'contact': "Emergency Contacts: \n- Kisan Call Center: 1800-180-1551 (Toll-Free) \n- Agricultural Department: 1551 \n- Contact your local Grama One center for documentation.",
-            'general': "Hello! I am KisanMitra, your AI Farming Expert. I can help with market rates, pest diagnosis, or scheme eligibility. What is on your mind today?"
+            'season': "Please specify which crop! Example: 'When to grow rice?' or 'Wheat sowing time'.\n\nI have detailed info on: Rice, Wheat, Tomato, Onion, Ragi, Mango, Banana.",
+            'pricing': "📊 Today's Market Prices:\n- Tomato: ₹18-26/kg\n- Ragi: ₹3,400-3,800/quintal\n- Onion: ₹2,200-2,500/quintal\n- Rice: ₹2,200-2,800/quintal (MSP: ₹2,300)\n- Wheat: ₹2,275/quintal (MSP)\n- Mango: ₹40-200/kg\n\nAsk about a specific crop for detailed pricing!",
+            'pests': "🐛 General Pest Management:\n1. Sucking pests: Neem Oil 5ml/L water\n2. Fungal: Mancozeb 2g/L or Copper Oxychloride 3g/L\n3. Bacterial wilt: Remove infected plants, apply Streptocycline\n4. Always rotate crops every 2-3 seasons\n\nTell me which crop for specific advice!",
+            'schemes': "🏛 Government Schemes:\n- PM-KISAN: ₹6,000/year direct transfer\n- KCC: Loans at 4% interest\n- PMFBY: Crop insurance (covers post-harvest too)\n- Soil Health Card: Free soil testing\n- eNAM: Online trading platform",
+            'weather': "🌦 Agri-Weather:\nExpect moderate rain in next 48 hours. Humidity 80%+.\n\nAdvice:\n- Postpone spraying operations\n- Ensure field drainage is clear\n- Good time for transplanting paddy",
+            'growing': "Please tell me which crop! Example: 'How to grow rice?' or 'Tomato cultivation tips'.\n\nI can guide you on: Rice, Wheat, Tomato, Onion, Ragi, Mango, Banana.\n\nI'll provide season, soil, water, fertilizer, varieties, and yield info.",
+            'contact': "📞 Emergency Contacts:\n- Kisan Call Center: 1800-180-1551 (Toll-Free)\n- Agriculture Dept: 1551\n- Grama One Center for documentation",
+            'general': "Hello! I'm KisanMitra, your AI Farming Expert. 🌾\n\nAsk me about any crop:\n• 'When to grow wheat?'\n• 'Rice cultivation guide'\n• 'Tomato price today'\n• 'Pest control for onion'\n\nI have detailed info on Rice, Wheat, Tomato, Onion, Ragi, Mango & Banana!"
         }
     return responses.get(intent, responses['general'])
 
@@ -68,13 +162,9 @@ def chat():
     message = data.get('message', '')
     intent = predict_intent(message)
     response_text = generate_chatbot_response(intent, message)
-    
-    # Simulate thinking time
-    import time
-    time.sleep(0.5)
-    
+    time.sleep(0.3)
     return jsonify({
-        "response": response_text, 
+        "response": response_text,
         "intent": intent,
         "language": "kn" if any(char > '\u0C80' and char < '\u0CFF' for char in message) else "en"
     })
@@ -83,24 +173,14 @@ def chat():
 def verify_crop():
     if 'file' not in request.files:
         return jsonify({"verified": False, "message": "No file uploaded"}), 400
-        
     file = request.files['file']
-    
-    # Simulate a Convolutional Neural Network (CNN) analysis of the image bytes
-    # In a real model, we would use torchvision or tensorflow here.
-    # We do a basic heuristic (e.g. check image size or simulate a forward pass)
-    
     file_bytes = file.read()
     size_kb = len(file_bytes) / 1024
-    
-    # Mock CNN prediction result based on randomness and file size metrics
-    is_real = True if size_kb > 5 else False  # Extremely small files might be fake icons
-    
+    is_real = size_kb > 5
     confidence = round(random.uniform(85.0, 98.5), 1)
-    
     if is_real:
         report = {
-            "condition": random.choice(["Healthy", "Slightly Bruised", "Excellent"]),
+            "condition": random.choice(["Healthy", "Excellent", "Pristine"]),
             "freshnessIndex": f"{random.randint(80, 98)}%",
             "pestIssues": "None detected by ML Vision",
             "colorQuality": "Optimal RGB profile",
@@ -108,7 +188,6 @@ def verify_crop():
         }
     else:
         report = None
-        
     return jsonify({
         "verified": is_real,
         "confidence": confidence if is_real else round(random.uniform(20.0, 45.0), 1),

@@ -10,11 +10,9 @@ import AddListingPage from './AddListingPage';
 import AIChatbot from './AIChatbot';
 import {
   Leaf, LayoutDashboard, Bot, User, LogOut, Sparkles, TrendingUp,
-  Package, BadgeCheck, Clock, Eye, Plus, Menu, X, ChevronRight
+  Package, BadgeCheck, Clock, Eye, Plus, Menu, X, ChevronRight, CloudRain
 } from 'lucide-react';
 import StatCard from '../components/StatCard';
-import WeatherWidget from '../components/WeatherWidget';
-import MarketTrends from '../components/MarketTrends';
 
 export default function FarmerDashboard() {
   const navigate = useNavigate();
@@ -218,22 +216,35 @@ export default function FarmerDashboard() {
               {/* Large Spacing Gap */}
               <div className="h-10"></div>
 
-              {/* Operational Insights & Market Intelligence */}
-              <div className="space-y-8">
-                <div className="flex items-center gap-4">
-                  <TrendingUp className="text-gray-300" size={24} />
-                  <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.3em]">Operational Intelligence</h4>
-                  <div className="h-px flex-1 bg-gray-200"></div>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                  <div className="lg:col-span-2">
-                    <WeatherWidget location={user.location} />
+              {/* Quick Navigation Icons */}
+              <div className="grid grid-cols-2 gap-6">
+                <button
+                  onClick={() => navigate('/weather')}
+                  className="group flex items-center gap-5 p-6 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[28px] text-white shadow-xl shadow-blue-200/50 hover:shadow-2xl hover:scale-[1.02] transition-all active:scale-[0.98]"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md group-hover:bg-white/30 transition-all">
+                    <CloudRain size={28} />
                   </div>
-                  <div className="lg:col-span-1">
-                    <MarketTrends />
+                  <div className="text-left">
+                    <p className="font-black text-lg tracking-tight">Weather Forecast</p>
+                    <p className="text-xs font-medium opacity-70">28° • Scattered Rain</p>
                   </div>
-                </div>
+                  <ChevronRight size={20} className="ml-auto opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                </button>
+
+                <button
+                  onClick={() => navigate('/market-prices')}
+                  className="group flex items-center gap-5 p-6 bg-gradient-to-br from-green-600 to-emerald-700 rounded-[28px] text-white shadow-xl shadow-green-200/50 hover:shadow-2xl hover:scale-[1.02] transition-all active:scale-[0.98]"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md group-hover:bg-white/30 transition-all">
+                    <TrendingUp size={28} />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-black text-lg tracking-tight">Market Prices</p>
+                    <p className="text-xs font-medium opacity-70">APMC Live Rates</p>
+                  </div>
+                  <ChevronRight size={20} className="ml-auto opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                </button>
               </div>
 
               {/* Extra Large Spacing Gap */}

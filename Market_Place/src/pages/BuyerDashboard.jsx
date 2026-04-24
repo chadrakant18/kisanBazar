@@ -9,9 +9,8 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import { cropOptions, locations } from '../data/mockData';
 import {
   Leaf, Search, SlidersHorizontal, LogOut, User, Bookmark,
-  ShoppingBag, X, ChevronDown, Filter, Sparkles, TrendingUp
+  ShoppingBag, X, ChevronDown, Filter, Sparkles, TrendingUp, CloudRain
 } from 'lucide-react';
-import MarketTrends from '../components/MarketTrends';
 
 export default function BuyerDashboard() {
   const navigate = useNavigate();
@@ -303,13 +302,38 @@ export default function BuyerDashboard() {
                 )}
               </div>
 
-              {/* Trends Sidebar */}
-              <div className="lg:col-span-1 space-y-8">
-                <MarketTrends />
-                <div className="bg-gradient-to-br from-green-600 to-emerald-800 rounded-[32px] p-8 text-white shadow-2xl shadow-green-900/20">
+              {/* Quick Links Sidebar */}
+              <div className="lg:col-span-1 space-y-6">
+                <button
+                  onClick={() => navigate('/market-prices')}
+                  className="w-full group flex items-center gap-4 p-6 bg-gradient-to-br from-green-600 to-emerald-700 rounded-[28px] text-white shadow-xl shadow-green-200/50 hover:shadow-2xl hover:scale-[1.02] transition-all active:scale-[0.98]"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
+                    <TrendingUp size={24} />
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className="font-black text-base tracking-tight">Market Prices</p>
+                    <p className="text-xs font-medium opacity-70">APMC Live Rates</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => navigate('/weather')}
+                  className="w-full group flex items-center gap-4 p-6 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[28px] text-white shadow-xl shadow-blue-200/50 hover:shadow-2xl hover:scale-[1.02] transition-all active:scale-[0.98]"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
+                    <CloudRain size={24} />
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className="font-black text-base tracking-tight">Weather</p>
+                    <p className="text-xs font-medium opacity-70">28° • Scattered Rain</p>
+                  </div>
+                </button>
+
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-[28px] p-8 text-white shadow-2xl">
                   <h4 className="text-lg font-black mb-2 uppercase tracking-tighter">Bulk Sourcing?</h4>
-                  <p className="text-sm font-medium opacity-80 mb-6">Connect with our regional procurement experts for orders above 5,000 kg.</p>
-                  <button className="w-full py-3 bg-white text-green-700 rounded-xl font-black text-xs tracking-widest hover:bg-gray-50 transition-all">
+                  <p className="text-sm font-medium opacity-60 mb-6">Connect with our regional procurement experts for orders above 5,000 kg.</p>
+                  <button className="w-full py-3 bg-white text-gray-900 rounded-xl font-black text-xs tracking-widest hover:bg-gray-50 transition-all">
                     GET QUOTE
                   </button>
                 </div>
