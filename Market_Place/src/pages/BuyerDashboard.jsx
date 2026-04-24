@@ -303,39 +303,51 @@ export default function BuyerDashboard() {
               </div>
 
               {/* Quick Links Sidebar */}
-              <div className="lg:col-span-1 space-y-6">
+              <div className="lg:col-span-1 flex flex-col gap-6 pt-10 lg:pt-0">
                 <button
                   onClick={() => navigate('/market-prices')}
-                  className="w-full group flex items-center gap-4 p-6 bg-gradient-to-br from-green-600 to-emerald-700 rounded-[28px] text-white shadow-xl shadow-green-200/50 hover:shadow-2xl hover:scale-[1.02] transition-all active:scale-[0.98]"
+                  className="w-full group relative overflow-hidden flex flex-col p-6 bg-gradient-to-br from-emerald-500 to-green-700 rounded-[32px] text-white shadow-[0_8px_30px_rgb(16,185,129,0.2)] hover:shadow-[0_8px_40px_rgb(16,185,129,0.4)] hover:-translate-y-1 transition-all duration-300"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
-                    <TrendingUp size={24} />
-                  </div>
-                  <div className="text-left flex-1">
-                    <p className="font-black text-base tracking-tight">Market Prices</p>
-                    <p className="text-xs font-medium opacity-70">APMC Live Rates</p>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10 transition-transform group-hover:scale-150"></div>
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md shadow-inner">
+                      <TrendingUp size={28} className="text-white drop-shadow-md" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-black text-xl tracking-tight leading-none mb-1">Market Prices</p>
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-100">APMC Live Rates</p>
+                    </div>
                   </div>
                 </button>
 
                 <button
                   onClick={() => navigate('/weather')}
-                  className="w-full group flex items-center gap-4 p-6 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[28px] text-white shadow-xl shadow-blue-200/50 hover:shadow-2xl hover:scale-[1.02] transition-all active:scale-[0.98]"
+                  className="w-full group relative overflow-hidden flex flex-col p-6 bg-gradient-to-br from-blue-500 to-indigo-700 rounded-[32px] text-white shadow-[0_8px_30px_rgb(59,130,246,0.2)] hover:shadow-[0_8px_40px_rgb(59,130,246,0.4)] hover:-translate-y-1 transition-all duration-300"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
-                    <CloudRain size={24} />
-                  </div>
-                  <div className="text-left flex-1">
-                    <p className="font-black text-base tracking-tight">Weather</p>
-                    <p className="text-xs font-medium opacity-70">28° • Scattered Rain</p>
+                  <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mb-10 transition-transform group-hover:scale-150"></div>
+                  <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md shadow-inner">
+                      <CloudRain size={28} className="text-white drop-shadow-md" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-black text-xl tracking-tight leading-none mb-1">Weather</p>
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-blue-100">Realtime Radar</p>
+                    </div>
                   </div>
                 </button>
 
-                <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-[28px] p-8 text-white shadow-2xl">
-                  <h4 className="text-lg font-black mb-2 uppercase tracking-tighter">Bulk Sourcing?</h4>
-                  <p className="text-sm font-medium opacity-60 mb-6">Connect with our regional procurement experts for orders above 5,000 kg.</p>
-                  <button className="w-full py-3 bg-white text-gray-900 rounded-xl font-black text-xs tracking-widest hover:bg-gray-50 transition-all">
-                    GET QUOTE
-                  </button>
+                <div className="w-full relative overflow-hidden bg-gradient-to-br from-slate-900 via-gray-900 to-black rounded-[32px] p-8 text-white shadow-2xl border border-gray-800">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                  <div className="relative z-10">
+                    <h4 className="text-2xl font-black mb-3 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">Bulk Sourcing?</h4>
+                    <p className="text-sm font-medium text-gray-400 leading-relaxed mb-8">Connect with our regional procurement experts for direct-from-farm orders above 5,000 kg.</p>
+                    <button 
+                      onClick={() => window.open('https://wa.me/919876543210?text=Hello%20KisanBazaar%20Experts!%20I%20am%20a%20buyer%20interested%20in%20Bulk%20Sourcing%20(5000kg%2B).%20Please%20assist%20me.', '_blank')}
+                      className="w-full flex justify-center items-center gap-2 py-4 bg-white text-black rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-emerald-500 hover:text-white transition-all shadow-lg hover:shadow-emerald-500/50"
+                    >
+                      Request Quote
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useListings } from '../context/ListingContext';
 import { verifyCropPhoto } from '../services/cropVerification';
 import { cropOptions, locations } from '../data/mockData';
-import { Upload, CheckCircle2, XCircle, Loader2, ImagePlus } from 'lucide-react';
+import { Upload, CheckCircle2, XCircle, Loader2, ImagePlus, Mic, MicOff } from 'lucide-react';
 
 export default function AddListingPage({ onSuccess }) {
   const { t } = useLanguage();
@@ -31,6 +31,28 @@ export default function AddListingPage({ onSuccess }) {
   const [verificationStatus, setVerificationStatus] = useState(null); // null | 'verifying' | 'verified' | 'rejected'
   const [verificationResult, setVerificationResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  const startVoiceTyping = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Voice typing is not supported in this browser. Please type manually.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US'; 
+    recognition.interimResults = false;
+    
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setFormData(prev => ({ ...prev, cropName: transcript }));
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+    
+    recognition.start();
+  };
 
   const handleChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -217,18 +239,27 @@ export default function AddListingPage({ onSuccess }) {
         <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('cropName')}</label>
-            <select
-              id="input-crop-name"
-              name="cropName"
-              value={formData.cropName}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500
-                focus:border-transparent outline-none bg-gray-50 focus:bg-white transition-all appearance-none"
-            >
-              <option value="">{t('selectCrop')}</option>
-              {cropOptions.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <div className="relative flex items-center">
+              <input
+                id="input-crop-name"
+                type="text"
+                name="cropName"
+                value={formData.cropName}
+                onChange={handleChange}
+                required
+                placeholder="Type or use voice to enter ANY crop name (e.g. Lemon, Paddy)"
+                className="w-full pl-4 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500
+                  focus:border-transparent outline-none bg-gray-50 focus:bg-white transition-all"
+              />
+              <button
+                type="button"
+                onClick={startVoiceTyping}
+                className={`absolute right-3 p-2 rounded-full transition-all ${isListening ? 'bg-red-100 text-red-600 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]' : 'bg-green-100 text-green-600 hover:bg-green-200'}`}
+                title="Use Voice to Type"
+              >
+                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+              </button>
+            </div>
           </div>
 
           <div>

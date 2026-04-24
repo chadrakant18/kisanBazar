@@ -82,9 +82,13 @@ CROP_DB = {
 
 def find_crop_in_text(text):
     text_lower = text.lower()
+    
+    # First check exact DB matches
     for crop in CROP_DB:
         if crop in text_lower:
             return crop
+            
+    # Then aliases
     aliases = {
         'paddy': 'rice', 'bhatta': 'rice', 'dhan': 'rice',
         'godhuma': 'wheat', 'godi': 'wheat',
@@ -95,6 +99,20 @@ def find_crop_in_text(text):
     for alias, crop in aliases.items():
         if alias in text_lower:
             return crop
+            
+    # Then generic crops
+    generic_crops = [
+        'lemon', 'potato', 'cabbage', 'cauliflower', 'carrot', 'radish', 'brinjal', 'eggplant', 
+        'capsicum', 'chilli', 'garlic', 'ginger', 'turmeric', 'cotton', 'sugarcane', 'maize', 
+        'corn', 'millet', 'sorghum', 'groundnut', 'peanut', 'soybean', 'mustard', 'sunflower', 
+        'coconut', 'papaya', 'guava', 'pomegranate', 'grape', 'apple', 'orange', 'sweet lime', 
+        'watermelon', 'muskmelon', 'cucumber', 'pumpkin', 'bottle gourd', 'bitter gourd', 
+        'spinach', 'coriander', 'mint', 'coffee', 'tea', 'rubber', 'pepper', 'cardamom', 'clove'
+    ]
+    for crop in generic_crops:
+        if crop in text_lower:
+            return crop
+            
     return None
 
 def predict_intent(text):
@@ -106,13 +124,38 @@ def generate_chatbot_response(intent, text, lang='en'):
     crop = find_crop_in_text(text)
 
     # Crop-specific answers
-    if crop and crop in CROP_DB:
-        db = CROP_DB[crop]
+    if crop:
         crop_title = crop.capitalize()
+        is_generic = crop not in CROP_DB
+        
+        # Fallback dynamic DB entry for crops not in CROP_DB
+        db = CROP_DB.get(crop, {
+            'season': 'Varies by region. Typically sown before monsoons or in mild winter.',
+            'soil': 'Well-drained fertile soil with rich organic matter.',
+            'water': 'Ensure consistent moisture but avoid waterlogging.',
+            'fertilizer': 'Use FYM (Farm Yard Manure) and balanced NPK as per soil test.',
+            'varieties': 'Consult local KVK for best regional hybrid varieties.',
+            'yield': 'Depends highly on soil health and climate conditions.',
+            'price': 'Subject to daily local APMC market rates.'
+        })
+        
         if is_kannada:
             # Simple Kannada translation for crop-specific answers
-            kannada_names = {'rice': 'ಭತ್ತ', 'wheat': 'ಗೋಧಿ', 'tomato': 'ಟೊಮೆಟೊ', 'onion': 'ಈರುಳ್ಳಿ', 'ragi': 'ರಾಗಿ', 'mango': 'ಮಾವು', 'banana': 'ಬಾಳೆ'}
+            kannada_names = {'rice': 'ಭತ್ತ', 'wheat': 'ಗೋಧಿ', 'tomato': 'ಟೊಮೆಟೊ', 'onion': 'ಈರುಳ್ಳಿ', 'ragi': 'ರಾಗಿ', 'mango': 'ಮಾವು', 'banana': 'ಬಾಳೆ', 'lemon': 'ನಿಂಬೆ', 'potato': 'ಆಲೂಗಡ್ಡೆ', 'chilli': 'ಮೆಣಸಿನಕಾಯಿ', 'cotton': 'ಹತ್ತಿ', 'sugarcane': 'ಕಬ್ಬು', 'maize': 'ಮೆಕ್ಕೆಜೋಳ', 'coconut': 'ತೆಂಗು'}
             k_crop = kannada_names.get(crop, crop_title)
+            
+            if is_generic:
+                db_k = {
+                    'season': 'ಪ್ರದೇಶಕ್ಕೆ ತಕ್ಕಂತೆ ಬದಲಾಗುತ್ತದೆ. ಮಳೆಗಾಲದ ಮುನ್ನ ಅಥವಾ ಚಳಿಗಾಲದಲ್ಲಿ ಬಿತ್ತನೆ.',
+                    'soil': 'ಉತ್ತಮ ನೀರು ಹರಿಯುವ ಫಲವತ್ತಾದ ಮಣ್ಣು.',
+                    'water': 'ಮಿತವಾದ ನೀರಿನ ಅಗತ್ಯವಿದೆ. ನೀರು ನಿಲ್ಲದಂತೆ ನೋಡಿಕೊಳ್ಳಿ.',
+                    'fertilizer': 'ಕೊಟ್ಟಿಗೆ ಗೊಬ್ಬರ ಮತ್ತು ಮಣ್ಣು ಪರೀಕ್ಷೆ ಆಧಾರಿತ ರಸಗೊಬ್ಬರ ಬಳಸಿ.',
+                    'varieties': 'ನಿಮ್ಮ ಹತ್ತಿರದ ಕೃಷಿ ವಿಜ್ಞಾನ ಕೇಂದ್ರ (KVK) ಸಂಪರ್ಕಿಸಿ.',
+                    'yield': 'ಮಣ್ಣಿನ ಆರೋಗ್ಯ ಮತ್ತು ಹವಾಮಾನದ ಮೇಲೆ ಆಧಾರಿತವಾಗಿದೆ.',
+                    'price': 'ಸ್ಥಳೀಯ APMC ಮಾರುಕಟ್ಟೆ ದರಗಳನ್ನು ಅವಲಂಬಿಸಿದೆ.'
+                }
+                db = db_k
+
             if intent == 'season' or 'ಯಾವಾಗ' in text:
                 return f"🌾 {k_crop} ಬೆಳೆಯುವ ಕಾಲ:\n{db['season']}\n\n📋 ತಳಿಗಳು: {db['varieties']}\n💰 ಪ್ರಸ್ತುತ ಬೆಲೆ: {db['price']}"
             elif intent == 'pricing':
