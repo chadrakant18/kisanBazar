@@ -9,8 +9,9 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import { cropOptions, locations } from '../data/mockData';
 import {
   Leaf, Search, SlidersHorizontal, LogOut, User, Bookmark,
-  ShoppingBag, X, ChevronDown, Filter, Sparkles
+  ShoppingBag, X, ChevronDown, Filter, Sparkles, TrendingUp
 } from 'lucide-react';
+import MarketTrends from '../components/MarketTrends';
 
 export default function BuyerDashboard() {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ export default function BuyerDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cropFilter, setCropFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
-  const [maxPrice, setMaxPrice] = useState(100);
+  const [maxPrice, setMaxPrice] = useState(200);
 
   useEffect(() => {
     if (!user || user.role !== 'buyer') {
@@ -60,7 +61,7 @@ export default function BuyerDashboard() {
     setSearchQuery('');
     setCropFilter('');
     setLocationFilter('');
-    setMaxPrice(100);
+    setMaxPrice(200);
   };
 
   const activeFiltersCount = [cropFilter, locationFilter, maxPrice < 100].filter(Boolean).length;
@@ -138,63 +139,60 @@ export default function BuyerDashboard() {
           <div className="space-y-8 animate-fade-in">
             {/* Search Header Section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div>
-                <h2 className="text-4xl font-black text-gray-900 tracking-tight mb-2">Find the <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600">Best Harvest</span></h2>
-                <p className="text-gray-500 font-medium">Direct sourcing from verified Indian farmers with ML price insights.</p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-4">
+              <div className="space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-200">
+                  <Sparkles size={12} />
+                  New Harvest Season 2026
+                </div>
+                <h2 className="text-6xl md:text-7xl font-black text-gray-900 tracking-tight mb-4 leading-[0.9]">
+                  Find the <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 italic">Best Harvest</span>
+                </h2>
+                <p className="text-xl text-gray-400 font-bold max-w-2xl leading-relaxed tracking-tight">
+                  Direct sourcing from India's most trusted, AI-verified farmers. 
+                  Experience zero middlemen and complete transparency in agriculture.
+                </p>
               </div>
-              
-              <div className="flex bg-white p-2 rounded-2xl shadow-sm border border-gray-100 w-full md:w-auto">
-                <button
-                  onClick={() => setActiveTab('browse')}
-                  className={`flex-1 md:w-32 py-2.5 rounded-xl text-sm font-bold transition-all sm:hidden
-                    ${activeTab === 'browse' ? 'bg-green-600 text-white shadow-lg shadow-green-200' : 'text-gray-500'}`}
-                >
-                  Browse
-                </button>
-                <button
-                  onClick={() => setActiveTab('saved')}
-                  className={`flex-1 md:w-32 py-2.5 rounded-xl text-sm font-bold transition-all sm:hidden
-                    ${activeTab === 'saved' ? 'bg-green-600 text-white shadow-lg shadow-green-200' : 'text-gray-500'}`}
-                >
-                  Saved
-                </button>
-              </div>
+
+              {/* Large Spacing Gap */}
+              <div className="h-10"></div>
+            </div>
             </div>
 
             {/* Premium Filter Bar */}
-            <div className="bg-white rounded-[32px] shadow-xl shadow-gray-200/50 border border-gray-100 p-2 overflow-hidden">
-              <div className="flex flex-col lg:flex-row items-center gap-2">
-                <div className="flex-1 relative w-full">
-                  <Search size={22} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" />
+            <div className="bg-white/40 backdrop-blur-3xl rounded-[40px] shadow-2xl shadow-green-900/5 border border-white p-3 overflow-hidden transition-all hover:shadow-green-900/10">
+              <div className="flex flex-col lg:flex-row items-center gap-3">
+                <div className="flex-1 relative w-full group">
+                  <Search size={24} className="absolute left-8 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t('searchCrops')}
-                    className="w-full pl-16 pr-6 py-6 text-lg font-medium border-none focus:ring-0 placeholder:text-gray-300 rounded-[28px]"
+                    className="w-full pl-20 pr-8 py-8 text-xl font-bold border-none focus:ring-0 placeholder:text-gray-300 rounded-[32px] bg-white/50 focus:bg-white transition-all shadow-inner"
                   />
                 </div>
                 
-                <div className="h-10 w-px bg-gray-100 hidden lg:block"></div>
+                <div className="h-12 w-px bg-gray-200 hidden lg:block"></div>
 
-                <div className="flex items-center gap-2 p-2 w-full lg:w-auto">
+                <div className="flex items-center gap-3 p-2 w-full lg:w-auto">
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className={`flex items-center gap-2 px-8 py-4 rounded-2xl text-sm font-black tracking-wide transition-all
+                    className={`flex items-center gap-3 px-10 py-5 rounded-[24px] text-sm font-black tracking-widest transition-all
                       ${showFilters || activeFiltersCount > 0
-                        ? 'bg-green-600 text-white shadow-lg shadow-green-200'
-                        : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                        ? 'bg-green-700 text-white shadow-2xl shadow-green-700/30 scale-105'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                       }`}
                   >
                     <SlidersHorizontal size={20} />
-                    {showFilters ? 'HIDE FILTERS' : 'FILTERS'}
+                    {showFilters ? 'CLOSE' : 'FILTERS'}
                     {activeFiltersCount > 0 && (
-                      <span className="w-5 h-5 rounded-full bg-white text-green-700 text-[10px] flex items-center justify-center font-black ml-1">
+                      <span className="w-6 h-6 rounded-full bg-white text-green-700 text-xs flex items-center justify-center font-black ml-1 animate-pulse">
                         {activeFiltersCount}
                       </span>
                     )}
                   </button>
-                  <button className="flex items-center gap-2 px-8 py-4 bg-gray-900 text-white rounded-2xl text-sm font-black tracking-wide shadow-xl shadow-gray-200 hover:bg-black transition-all">
+                  <button className="flex items-center gap-3 px-12 py-5 bg-gray-900 text-white rounded-[24px] text-sm font-black tracking-widest shadow-2xl shadow-gray-900/20 hover:bg-black hover:scale-105 active:scale-95 transition-all">
                     <Search size={20} />
                     SEARCH
                   </button>
@@ -264,46 +262,58 @@ export default function BuyerDashboard() {
                       {t('clearFilters') || "RESET ALL FILTERS"}
                     </button>
                   </div>
+            
+            {/* Spacing Gap */}
+            <div className="h-20"></div>
                 </div>
               )}
             </div>
 
-            {/* Optimized Results Display */}
-            <div className="py-2">
-               <div className="flex items-center gap-2 mb-6 text-gray-400 font-bold uppercase tracking-widest text-[11px] animate-fade-in">
-                  <Sparkles size={14} className="text-amber-400" />
-                  Realtime Discovery: Found <span className="text-gray-900 font-black underline decoration-green-500/30 decoration-4">{filteredListings.length} Premium Listings</span>
-               </div>
+            {/* Main Content Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 py-2">
+              {/* Listings Column */}
+              <div className="lg:col-span-3">
+                 <div className="flex items-center gap-2 mb-6 text-gray-400 font-bold uppercase tracking-widest text-[11px] animate-fade-in">
+                    <Sparkles size={14} className="text-amber-400" />
+                    Realtime Discovery: Found <span className="text-gray-900 font-black underline decoration-green-500/30 decoration-4">{filteredListings.length} Premium Listings</span>
+                 </div>
 
-              {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                  {[1, 2, 3, 4, 5, 6].map(i => (
-                    <div key={i} className="bg-white rounded-3xl h-[450px] animate-pulse border border-gray-100 shadow-sm" />
-                  ))}
-                </div>
-              ) : filteredListings.length === 0 ? (
-                <div className="bg-white rounded-[40px] border-2 border-dashed border-gray-100 py-32 text-center shadow-inner animate-pulse">
-                  <div className="w-24 h-24 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-8">
-                    <Search size={48} className="text-gray-200" />
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    {[1, 2, 3, 4].map(i => (
+                      <div key={i} className="bg-white rounded-3xl h-[450px] animate-pulse border border-gray-100 shadow-sm" />
+                    ))}
                   </div>
-                  <h3 className="text-3xl font-black text-gray-900 mb-2">No Harvest Found</h3>
-                  <p className="text-gray-400 font-medium max-w-sm mx-auto mb-8 text-lg">We couldn't find any verified crops matching your current filters. Try relaxing your constraints.</p>
-                  <button
-                    onClick={clearFilters}
-                    className="px-10 py-4 bg-gray-900 text-white rounded-[20px] font-black tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200 active:scale-95"
-                  >
-                    RESET SEARCH
+                ) : filteredListings.length === 0 ? (
+                  <div className="bg-white rounded-[40px] border-2 border-dashed border-gray-100 py-32 text-center shadow-inner animate-pulse">
+                    <div className="w-24 h-24 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-8">
+                      <Search size={48} className="text-gray-200" />
+                    </div>
+                    <h3 className="text-3xl font-black text-gray-900 mb-2">No Active Listings</h3>
+                    <p className="text-gray-400 font-medium max-w-sm mx-auto mb-8 text-lg">Real data is currently being verified. Check back soon for fresh harvest direct from farmers.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    {filteredListings.map((listing, i) => (
+                      <div key={listing.id} className="transform transition-all duration-700 hover:-translate-y-4" style={{ animationDelay: `${i * 100}ms` }}>
+                        <CropCard listing={listing} showContact={true} showSave={true} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Trends Sidebar */}
+              <div className="lg:col-span-1 space-y-8">
+                <MarketTrends />
+                <div className="bg-gradient-to-br from-green-600 to-emerald-800 rounded-[32px] p-8 text-white shadow-2xl shadow-green-900/20">
+                  <h4 className="text-lg font-black mb-2 uppercase tracking-tighter">Bulk Sourcing?</h4>
+                  <p className="text-sm font-medium opacity-80 mb-6">Connect with our regional procurement experts for orders above 5,000 kg.</p>
+                  <button className="w-full py-3 bg-white text-green-700 rounded-xl font-black text-xs tracking-widest hover:bg-gray-50 transition-all">
+                    GET QUOTE
                   </button>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                  {filteredListings.map((listing, i) => (
-                    <div key={listing.id} className="transform transition-all duration-700 hover:-translate-y-4" style={{ animationDelay: `${i * 100}ms` }}>
-                      <CropCard listing={listing} showContact={true} showSave={true} />
-                    </div>
-                  ))}
-                </div>
-              )}
+              </div>
             </div>
           </div>
         )}

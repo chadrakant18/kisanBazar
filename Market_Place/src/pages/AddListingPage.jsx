@@ -95,21 +95,36 @@ export default function AddListingPage({ onSuccess }) {
               ${verificationStatus === 'rejected' ? 'border-red-300 bg-red-50/30' : ''}`}
           >
             {photoPreview ? (
-              <div className="relative">
-                <img src={photoPreview} alt="Crop preview" className="w-full h-56 object-cover" />
-                <div className="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <div className="bg-white/90 rounded-full p-3">
+              <div className="relative group">
+                <img src={photoPreview} alt="Crop preview" className="w-full h-64 object-cover" />
+                
+                {/* AI Scanning Overlay */}
+                {verificationStatus === 'verifying' && (
+                  <div className="absolute inset-0 overflow-hidden">
+                    <div className="absolute inset-0 bg-blue-500/10 animate-pulse"></div>
+                    <div className="absolute left-0 right-0 h-1 bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.8)] animate-scan"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="bg-black/60 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/20 flex items-center gap-3">
+                         <Loader2 size={24} className="text-white animate-spin" />
+                         <span className="text-white font-black text-sm uppercase tracking-widest">AI ANALYZING PIXELS...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="bg-white/90 rounded-full p-3 shadow-xl">
                     <ImagePlus size={24} className="text-green-600" />
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="py-16 flex flex-col items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-3">
-                  <Upload size={28} className="text-green-600" />
+              <div className="py-20 flex flex-col items-center justify-center">
+                <div className="w-20 h-20 rounded-3xl bg-green-100 flex items-center justify-center mb-4 rotate-3 group-hover:rotate-0 transition-transform">
+                  <Upload size={32} className="text-green-600" />
                 </div>
-                <p className="text-sm font-medium text-gray-700">Click to upload crop photo</p>
-                <p className="text-xs text-gray-400 mt-1">JPG, PNG up to 10MB</p>
+                <p className="text-lg font-black text-gray-800">Upload Crop Harvest</p>
+                <p className="text-sm font-medium text-gray-400 mt-1">Our AI will verify authenticity & quality</p>
               </div>
             )}
             <input
@@ -124,41 +139,74 @@ export default function AddListingPage({ onSuccess }) {
 
           {/* Verification Status */}
           {verificationStatus && (
-            <div className={`mt-4 flex flex-col gap-3 px-4 py-3 rounded-xl text-sm font-medium animate-scale-in
-              ${verificationStatus === 'verifying' ? 'bg-blue-50 text-blue-700 border border-blue-200' : ''}
-              ${verificationStatus === 'verified' ? 'bg-green-50 text-green-700 border border-green-200' : ''}
-              ${verificationStatus === 'rejected' ? 'bg-red-50 text-red-700 border border-red-200' : ''}`}
+            <div className={`mt-6 flex flex-col gap-4 px-6 py-5 rounded-[24px] text-sm font-medium animate-scale-in
+              ${verificationStatus === 'verifying' ? 'bg-blue-50 text-blue-700 border border-blue-200/50 shadow-blue-100/50 shadow-lg' : ''}
+              ${verificationStatus === 'verified' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/50 shadow-emerald-100/50 shadow-lg' : ''}
+              ${verificationStatus === 'rejected' ? 'bg-red-50 text-red-700 border border-red-200/50 shadow-red-100/50 shadow-lg' : ''}`}
             >
-              <div className="flex items-center gap-3 w-full">
+              <div className="flex items-center gap-4 w-full">
                 {verificationStatus === 'verifying' && (
                   <>
-                    <Loader2 size={20} className="animate-spin" />
-                    {t('verifying')}
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                      <Loader2 size={18} className="animate-spin" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-black uppercase tracking-widest text-[10px]">Processing Vision Pipeline</p>
+                      <p className="text-xs opacity-70 italic">Extracting freshness metrics & verifying geolocation metadata...</p>
+                    </div>
                   </>
                 )}
                 {verificationStatus === 'verified' && (
                   <>
-                    <CheckCircle2 size={20} />
-                    {t('realCropDetected')}
-                    <span className="ml-auto text-xs opacity-70">Confidence: {verificationResult?.confidence}%</span>
+                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shadow-inner">
+                      <CheckCircle2 size={24} className="text-emerald-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-black uppercase tracking-widest text-[10px]">Verification Successful</p>
+                      <p className="text-xs opacity-70 italic">High-quality {formData.cropName || 'produce'} detected. Metadata matches.</p>
+                    </div>
+                    <span className="bg-emerald-600 text-white px-3 py-1 rounded-lg text-[10px] font-black">CONFIDENCE: {verificationResult?.confidence}%</span>
                   </>
                 )}
                 {verificationStatus === 'rejected' && (
                   <>
-                    <XCircle size={20} />
-                    {t('aiGeneratedDetected')}
+                    <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                      <XCircle size={24} className="text-red-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-black uppercase tracking-widest text-[10px]">Verification Failed</p>
+                      <p className="text-xs opacity-70 italic">{verificationResult?.message || t('aiGeneratedDetected')}</p>
+                    </div>
                   </>
                 )}
               </div>
               
               {verificationStatus === 'verified' && verificationResult?.report && (
-                <div className="mt-2 pt-3 border-t border-green-200/50 grid grid-cols-2 gap-2 text-xs">
-                  <div className="col-span-2 text-green-800 font-bold mb-1">AI Crop Analysis Report:</div>
-                  <div><span className="text-green-600">Condition:</span> {verificationResult.report.condition}</div>
-                  <div><span className="text-green-600">Freshness:</span> {verificationResult.report.freshnessIndex}</div>
-                  <div><span className="text-green-600">Pests:</span> {verificationResult.report.pestIssues}</div>
-                  <div><span className="text-green-600">Color:</span> {verificationResult.report.colorQuality}</div>
-                  <div className="col-span-2 text-green-800 mt-1 italic">"{verificationResult.report.overallAssessment}"</div>
+                <div className="mt-2 pt-5 border-t border-emerald-200/30 grid grid-cols-2 gap-4">
+                  <div className="col-span-2 flex items-center gap-2 mb-1">
+                    <div className="w-1 h-4 bg-emerald-500 rounded-full"></div>
+                    <span className="text-emerald-900 font-black uppercase tracking-widest text-[10px]">AI Crop Analysis Report</span>
+                  </div>
+                  <div className="bg-white/50 p-3 rounded-2xl border border-emerald-100/50 flex flex-col">
+                    <span className="text-[10px] font-black text-emerald-600/60 uppercase tracking-tighter">Condition</span>
+                    <span className="font-bold text-emerald-900">{verificationResult.report.condition}</span>
+                  </div>
+                  <div className="bg-white/50 p-3 rounded-2xl border border-emerald-100/50 flex flex-col">
+                    <span className="text-[10px] font-black text-emerald-600/60 uppercase tracking-tighter">Freshness</span>
+                    <span className="font-bold text-emerald-900">{verificationResult.report.freshnessIndex}</span>
+                  </div>
+                  <div className="bg-white/50 p-3 rounded-2xl border border-emerald-100/50 flex flex-col">
+                    <span className="text-[10px] font-black text-emerald-600/60 uppercase tracking-tighter">Pest Status</span>
+                    <span className="font-bold text-emerald-900">{verificationResult.report.pestIssues}</span>
+                  </div>
+                  <div className="bg-white/50 p-3 rounded-2xl border border-emerald-100/50 flex flex-col">
+                    <span className="text-[10px] font-black text-emerald-600/60 uppercase tracking-tighter">Color Metric</span>
+                    <span className="font-bold text-emerald-900">{verificationResult.report.colorQuality}</span>
+                  </div>
+                  <div className="col-span-2 bg-emerald-100/20 p-4 rounded-2xl border border-emerald-200/50 shadow-inner">
+                    <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest mb-1">Summary Assessment</p>
+                    <p className="text-xs text-emerald-900/80 font-medium leading-relaxed">"{verificationResult.report.overallAssessment}"</p>
+                  </div>
                 </div>
               )}
             </div>

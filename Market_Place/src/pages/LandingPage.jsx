@@ -1,85 +1,164 @@
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageToggle from '../components/LanguageToggle';
-import { Sprout, TrendingUp, Leaf } from 'lucide-react';
+import { Leaf, ArrowRight, ShieldCheck, Zap, HeartHandshake, Sparkles, Bot } from 'lucide-react';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-amber-50/30 flex flex-col">
-      {/* Navbar Minimal */}
-      <nav className="w-full z-50 glass border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center shadow-lg">
-              <Leaf className="text-white" size={22} />
+    <div className="min-h-screen bg-[#fcfdfb] overflow-hidden selection:bg-green-100 selection:text-green-900">
+      {/* Dynamic Background Elements */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-green-200/20 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[10%] left-[-10%] w-[500px] h-[500px] bg-emerald-200/20 blur-[100px] rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
+
+      {/* Navbar */}
+      <nav className="relative z-50 px-6 py-8">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/')}>
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-600 to-emerald-800 flex items-center justify-center shadow-xl shadow-green-200/50 group-hover:rotate-12 transition-transform duration-500">
+              <Leaf className="text-white" size={26} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-green-900 leading-none">KisanBazaar</h1>
+               <h1 className="text-2xl font-black text-gray-900 tracking-tighter italic">Kisan<span className="text-green-600">Bazaar</span></h1>
+               <div className="h-1 w-0 bg-green-500 group-hover:w-full transition-all duration-500 rounded-full"></div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-6">
             <LanguageToggle />
+            <button 
+              onClick={() => navigate('/login/farmer')}
+              className="text-sm font-black text-gray-400 hover:text-green-700 transition-colors uppercase tracking-widest"
+            >
+              {t('login')}
+            </button>
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-4">
-        <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-8 text-center animate-slide-up">
-          Welcome to KisanBazaar
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl animate-slide-up stagger-2" style={{ opacity: 1 }}>
-          
-          {/* Farmer Card */}
-          <div className="bg-white rounded-3xl p-8 shadow-xl border border-green-100 flex flex-col items-center text-center transform hover:-translate-y-1 transition-all">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-6 text-green-600">
-              <Sprout size={32} />
+      {/* Hero Section */}
+      <main className="relative z-10 max-w-7xl mx-auto px-6 pt-16 pb-32">
+        <div className="grid lg:grid-cols-2 gap-20 items-center">
+          <div className="space-y-10">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-100 rounded-full animate-fade-in">
+              <Sparkles className="text-green-600" size={16} />
+              <span className="text-[11px] font-black text-green-700 uppercase tracking-[0.2em]">{t('heroTaglineKn') || "India's #1 Agri-Marketplace"}</span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('imFarmer') || 'I am a Farmer'}</h3>
-            <p className="text-gray-500 mb-8">Sell your fresh produce directly to bulk buyers.</p>
-            <div className="flex gap-4 w-full">
+            
+            <h2 className="text-7xl md:text-8xl font-black text-gray-900 tracking-tight leading-[0.9] animate-slide-up">
+              Farm Fresh,<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-600 to-teal-700 italic">Direct to You.</span>
+            </h2>
+            
+            <p className="text-xl text-gray-500 font-medium leading-relaxed max-w-xl animate-fade-in" style={{ animationDelay: '0.2s' }}>
+              {t('heroSubtitle')} Empowering Bharat's farmers with AI-driven insights and direct buyer connections.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-5 pt-4 animate-slide-up" style={{ animationDelay: '0.4s' }}>
               <button
                 onClick={() => navigate('/login/farmer')}
-                className="flex-1 py-3 px-4 bg-green-50 text-green-700 rounded-xl font-semibold hover:bg-green-100 transition-colors"
+                className="group px-10 py-6 bg-gray-900 text-white rounded-3xl font-black text-lg tracking-wide hover:bg-black transition-all shadow-2xl shadow-gray-200 flex items-center justify-center gap-4"
               >
-                {t('login')}
+                {t('imFarmer')}
+                <ArrowRight className="group-hover:translate-x-2 transition-transform" size={24} />
               </button>
               <button
-                onClick={() => navigate('/register/farmer')}
-                className="flex-1 py-3 px-4 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 shadow-lg shadow-green-600/30 transition-all"
+                onClick={() => navigate('/login/buyer')}
+                className="px-10 py-6 bg-white text-gray-900 border-2 border-gray-100 rounded-3xl font-black text-lg tracking-wide hover:border-green-600 hover:text-green-700 transition-all shadow-xl shadow-gray-100 flex items-center justify-center"
               >
-                {t('register')}
+                {t('imBuyer')}
               </button>
+            </div>
+
+            {/* Trust Badges */}
+            <div className="flex items-center gap-10 pt-12 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
+               <div className="flex flex-col gap-1">
+                  <span className="text-2xl font-black text-gray-900">50K+</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Active Farmers</span>
+               </div>
+               <div className="h-10 w-px bg-gray-300"></div>
+               <div className="flex flex-col gap-1">
+                  <span className="text-2xl font-black text-gray-900">₹10Cr+</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Trade Volume</span>
+               </div>
+               <div className="h-10 w-px bg-gray-300"></div>
+               <div className="flex flex-col gap-1">
+                  <span className="text-2xl font-black text-gray-900">4.9/5</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">User Rating</span>
+               </div>
             </div>
           </div>
 
-          {/* Buyer Card */}
-          <div className="bg-white rounded-3xl p-8 shadow-xl border border-amber-100 flex flex-col items-center text-center transform hover:-translate-y-1 transition-all">
-            <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mb-6 text-amber-600">
-              <TrendingUp size={32} />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('imBuyer') || 'I am a Buyer'}</h3>
-            <p className="text-gray-500 mb-8">Source fresh produce directly from farmers.</p>
-            <div className="flex gap-4 w-full">
-              <button
-                onClick={() => navigate('/login/buyer')}
-                className="flex-1 py-3 px-4 bg-amber-50 text-amber-700 rounded-xl font-semibold hover:bg-amber-100 transition-colors"
-              >
-                {t('login')}
-              </button>
-              <button
-                onClick={() => navigate('/register/buyer')}
-                className="flex-1 py-3 px-4 bg-amber-500 text-white rounded-xl font-semibold hover:bg-amber-600 shadow-lg shadow-amber-500/30 transition-all"
-              >
-                {t('register')}
-              </button>
-            </div>
+          {/* Interactive Feature Cards */}
+          <div className="grid grid-cols-2 gap-6 relative">
+             {/* Abstract Visual Decor */}
+             <div className="absolute inset-0 bg-green-600/5 blur-3xl rounded-full scale-125 -z-10 animate-pulse"></div>
+
+             <div className="space-y-6 pt-12">
+                <FeatureCard 
+                  icon={<ShieldCheck className="text-green-600" />} 
+                  title={t('featVerification') || "AI Verification"} 
+                  desc={t('featVerificationDesc') || "Machine learning ensures crop quality and authenticity."} 
+                  color="bg-green-50"
+                />
+                <FeatureCard 
+                  icon={<Bot className="text-blue-600" />} 
+                  title={t('featAssistant') || "KisanMitra AI"} 
+                  desc={t('featAssistantDesc') || "Multilingual farming expert in your pocket."} 
+                  color="bg-blue-50"
+                  delay="200ms"
+                />
+             </div>
+             <div className="space-y-6">
+                <FeatureCard 
+                  icon={<Zap className="text-amber-600" />} 
+                  title={t('featCropListing') || "Instant Listing"} 
+                  desc={t('featCropListingDesc') || "Post your harvest in seconds with smart forms."} 
+                  color="bg-amber-50"
+                  delay="100ms"
+                />
+                <FeatureCard 
+                  icon={<HeartHandshake className="text-rose-600" />} 
+                  title={t('featContact') || "Direct Connect"} 
+                  desc={t('featContactDesc') || "Chat directly with verified buyers via WhatsApp."} 
+                  color="bg-rose-50"
+                  delay="300ms"
+                />
+             </div>
           </div>
-          
         </div>
+      </main>
+
+      {/* Footer Mini */}
+      <footer className="relative z-10 py-10 border-t border-gray-100">
+         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6 opacity-40 text-[10px] font-black uppercase tracking-[0.3em]">
+            <span>© 2026 KisanBazaar Global Technologies</span>
+            <div className="flex gap-10">
+               <a href="#" className="hover:text-green-700">Privacy</a>
+               <a href="#" className="hover:text-green-700">Terms</a>
+               <a href="#" className="hover:text-green-700">Contact</a>
+            </div>
+         </div>
+      </footer>
+    </div>
+  );
+}
+
+function FeatureCard({ icon, title, desc, color, delay = '0ms' }) {
+  return (
+    <div 
+      className="p-8 bg-white rounded-[32px] shadow-2xl shadow-gray-200/50 border border-gray-50 flex flex-col gap-5 hover:scale-105 transition-all duration-500 cursor-default animate-slide-up"
+      style={{ animationDelay: delay }}
+    >
+      <div className={`w-14 h-14 ${color} rounded-2xl flex items-center justify-center shadow-inner`}>
+        {icon}
+      </div>
+      <div>
+        <h4 className="text-xl font-black text-gray-900 tracking-tight mb-2">{title}</h4>
+        <p className="text-sm text-gray-500 font-medium leading-relaxed">{desc}</p>
       </div>
     </div>
   );

@@ -1,44 +1,46 @@
 import { cropColors } from '../data/mockData';
+import { Leaf } from 'lucide-react';
 
-export default function CropImage({ cropName, photo, className = '', size = 'md' }) {
+export default function CropImage({ cropName, photo, size = 'md', className = '' }) {
   const sizeClasses = {
-    sm: 'w-full h-32',
-    md: 'w-full h-48',
-    lg: 'w-full h-64',
+    sm: 'w-16 h-16 rounded-xl',
+    md: 'w-full h-56',
+    lg: 'w-full h-80 rounded-2xl',
   };
 
   if (photo) {
     return (
-      <div className={`${sizeClasses[size]} overflow-hidden ${className}`}>
+      <div className={`${sizeClasses[size]} overflow-hidden ${className} relative group bg-gray-100`}>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         <img
           src={photo}
           alt={cropName}
-          className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
         />
       </div>
     );
   }
 
-  const bgColor = cropColors[cropName] || '#4caf50';
-  const isLight = ['#fdd835', '#ffeb3b', '#ffc107', '#eceff1', '#ffe082', '#fbc02d'].includes(bgColor);
-
+  // Premium Placeholder for missing images
+  const color = cropColors[cropName] || '#4caf50';
+  
   return (
-    <div
-      className={`${sizeClasses[size]} flex flex-col items-center justify-center relative overflow-hidden ${className}`}
-      style={{ background: `linear-gradient(135deg, ${bgColor}dd, ${bgColor}99)` }}
+    <div 
+      className={`${sizeClasses[size]} flex flex-col items-center justify-center relative overflow-hidden ${className} bg-gray-50`}
+      style={{ backgroundColor: `${color}10` }}
     >
-      <div className="absolute inset-0 opacity-10">
-        <svg viewBox="0 0 200 200" className="w-full h-full">
-          <pattern id={`pattern-${cropName}`} x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-            <circle cx="20" cy="20" r="8" fill="currentColor" opacity="0.3" />
-          </pattern>
-          <rect width="200" height="200" fill={`url(#pattern-${cropName})`} />
-        </svg>
+      {/* Abstract Agricultural Pattern */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ 
+        backgroundImage: `radial-gradient(${color} 1px, transparent 1px)`,
+        backgroundSize: '24px 24px'
+      }} />
+      
+      <div className="relative z-10 flex flex-col items-center gap-3">
+        <div className="w-16 h-16 rounded-3xl flex items-center justify-center shadow-2xl transition-transform duration-500 hover:rotate-12" style={{ backgroundColor: color }}>
+          <Leaf className="text-white" size={32} />
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color }}>{cropName}</span>
       </div>
-      <div className="text-4xl mb-2">🌾</div>
-      <span className={`text-sm font-semibold relative z-10 px-3 py-1 rounded-full ${isLight ? 'text-gray-800 bg-white/40' : 'text-white bg-black/20'}`}>
-        {cropName}
-      </span>
     </div>
   );
 }

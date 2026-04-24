@@ -9,10 +9,12 @@ import LoadingSkeleton from '../components/LoadingSkeleton';
 import AddListingPage from './AddListingPage';
 import AIChatbot from './AIChatbot';
 import {
-  Leaf, LayoutDashboard, ListPlus, Bot, User, LogOut,
+  Leaf, LayoutDashboard, Bot, User, LogOut, Sparkles, TrendingUp,
   Package, BadgeCheck, Clock, Eye, Plus, Menu, X, ChevronRight
 } from 'lucide-react';
 import StatCard from '../components/StatCard';
+import WeatherWidget from '../components/WeatherWidget';
+import MarketTrends from '../components/MarketTrends';
 
 export default function FarmerDashboard() {
   const navigate = useNavigate();
@@ -44,7 +46,7 @@ export default function FarmerDashboard() {
 
   const navItems = [
     { id: 'listings', icon: LayoutDashboard, label: t('myListings') },
-    { id: 'add', icon: ListPlus, label: t('addNewCrop') },
+    { id: 'add', icon: Plus, label: t('addNewCrop') },
     { id: 'assistant', icon: Bot, label: t('aiAssistant') },
     { id: 'profile', icon: User, label: t('profile') },
   ];
@@ -148,79 +150,153 @@ export default function FarmerDashboard() {
       {/* Main Content */}
       <main className="flex-1 min-w-0">
         {/* Top bar */}
-        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-30">
-          <div className="flex items-center gap-3">
+        <header className="bg-white/80 backdrop-blur-xl border-b border-gray-100 px-6 py-5 flex items-center justify-between sticky top-0 z-30">
+          <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 cursor-pointer"
+              className="lg:hidden p-3 rounded-2xl hover:bg-gray-100 transition-colors"
             >
-              <Menu size={20} />
+              <Menu size={22} />
             </button>
-            <h2 className="text-xl font-bold text-gray-900">
-              {activeTab === 'listings' && t('myListings')}
-              {activeTab === 'add' && t('addNewCrop')}
-              {activeTab === 'assistant' && t('aiAssistant')}
-              {activeTab === 'profile' && t('profile')}
-            </h2>
+            <div className="hidden sm:block">
+               <h2 className="text-2xl font-black text-gray-900 tracking-tight">
+                {activeTab === 'listings' && t('myListings')}
+                {activeTab === 'add' && t('addNewCrop')}
+                {activeTab === 'assistant' && t('aiAssistant')}
+                {activeTab === 'profile' && t('profile')}
+              </h2>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Dashboard / {activeTab}</p>
+            </div>
           </div>
-          {activeTab === 'listings' && (
-            <button
-              id="btn-add-listing-top"
-              onClick={() => setActiveTab('add')}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700
-                text-white rounded-xl text-sm font-medium shadow hover:shadow-lg transition-all cursor-pointer"
-            >
-              <Plus size={18} />
-              <span className="hidden sm:inline">{t('addNewCrop')}</span>
-            </button>
-          )}
+          
+          <div className="flex items-center gap-4">
+            <div className="bg-orange-50 px-4 py-2 rounded-xl border border-orange-100 hidden md:flex items-center gap-2">
+               <Sparkles size={16} className="text-orange-500" />
+               <span className="text-[11px] font-black text-orange-700 uppercase tracking-widest">Premium Member</span>
+            </div>
+            {activeTab === 'listings' && (
+              <button
+                id="btn-add-listing-top"
+                onClick={() => setActiveTab('add')}
+                className="flex items-center gap-3 px-6 py-3 bg-gray-900 text-white rounded-2xl text-sm font-black tracking-widest shadow-2xl shadow-gray-200 hover:bg-black hover:scale-105 active:scale-95 transition-all"
+              >
+                <Plus size={20} />
+                <span className="hidden sm:inline">{t('addNewCrop')}</span>
+              </button>
+            )}
+          </div>
         </header>
 
-        <div className="p-4 sm:p-6">
+        <div className="p-6 md:p-10 space-y-10">
           {activeTab === 'listings' && (
-            <div className="animate-fade-in">
-              {/* Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="animate-fade-in space-y-12">
+              {/* Premium Greeting & Intro */}
+              <div className="space-y-4 max-w-3xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-200">
+                  <BadgeCheck size={12} />
+                  Operational Mode: ACTIVE
+                </div>
+                <h3 className="text-5xl font-black text-gray-900 tracking-tight leading-tight">
+                  Harvest Console: <span className="text-green-600 italic">{user.name}</span>
+                </h3>
+                <p className="text-lg text-gray-500 font-medium tracking-tight leading-relaxed">
+                  Your marketplace analytics for <span className="text-gray-900 font-bold underline decoration-green-200 decoration-4">{user.location}</span>. 
+                  Currently reaching <span className="text-gray-900 font-bold">{totalViews} potential buyers</span> across the region.
+                </p>
+              </div>
+
+              {/* Spacing Gap */}
+              <div className="h-4"></div>
+
+              {/* Stats Section */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
                 {stats.map((stat, i) => (
                   <StatCard key={i} {...stat} delay={i * 0.1} />
                 ))}
               </div>
 
-              {/* Listings */}
-              {loading ? (
-                <LoadingSkeleton count={3} />
-              ) : myListings.length === 0 ? (
-                <div className="text-center py-20">
-                  <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                    <Package size={32} className="text-green-600" />
+              {/* Large Spacing Gap */}
+              <div className="h-10"></div>
+
+              {/* Operational Insights & Market Intelligence */}
+              <div className="space-y-8">
+                <div className="flex items-center gap-4">
+                  <TrendingUp className="text-gray-300" size={24} />
+                  <h4 className="text-sm font-black text-gray-400 uppercase tracking-[0.3em]">Operational Intelligence</h4>
+                  <div className="h-px flex-1 bg-gray-200"></div>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                  <div className="lg:col-span-2">
+                    <WeatherWidget location={user.location} />
                   </div>
-                  <p className="text-gray-500 mb-4">{t('noListings')}</p>
+                  <div className="lg:col-span-1">
+                    <MarketTrends />
+                  </div>
+                </div>
+              </div>
+
+              {/* Extra Large Spacing Gap */}
+              <div className="h-16"></div>
+
+              {/* Active Listings Section */}
+              <div className="space-y-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gray-900 text-white flex items-center justify-center shadow-xl">
+                      <Package size={24} />
+                    </div>
+                    <div>
+                      <h4 className="text-2xl font-black text-gray-900 tracking-tighter uppercase">My Marketplace Listings</h4>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-0.5">Live harvest available for bulk purchase</p>
+                    </div>
+                  </div>
                   <button
                     onClick={() => setActiveTab('add')}
-                    className="px-6 py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors cursor-pointer"
+                    className="hidden sm:flex items-center gap-3 px-8 py-4 bg-green-600 text-white rounded-2xl text-xs font-black tracking-widest hover:bg-green-700 transition-all shadow-xl shadow-green-200 active:scale-95"
                   >
-                    {t('addNewCrop')}
+                    <Plus size={18} />
+                    ADD NEW HARVEST
                   </button>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {myListings.map((listing) => (
-                    <CropCard 
-                      key={listing.id} 
-                      listing={{
-                        ...listing, 
-                        onDelete: (id) => {
-                          if (window.confirm("Are you sure you want to delete this listing?")) {
-                            deleteListing(id);
-                          }
-                        },
-                        onEdit: (listing) => alert("Edit feature coming soon!") 
-                      }} 
-                      showContact={false} 
-                    />
-                  ))}
-                </div>
-              )}
+
+                {loading ? (
+                  <LoadingSkeleton count={3} />
+                ) : myListings.length === 0 ? (
+                  <div className="bg-white rounded-[40px] border-2 border-dashed border-gray-100 py-32 text-center shadow-inner">
+                    <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-6">
+                      <Package size={32} className="text-green-300" />
+                    </div>
+                    <h3 className="text-2xl font-black text-gray-900 mb-2">No active listings</h3>
+                    <p className="text-gray-400 font-medium max-w-sm mx-auto mb-8 text-base">You haven't listed any crops for sale yet. Start by adding your first harvest.</p>
+                    <button
+                      onClick={() => setActiveTab('add')}
+                      className="px-10 py-4 bg-gray-900 text-white rounded-2xl font-black tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-200 active:scale-95"
+                    >
+                      {t('addNewCrop')}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                    {myListings.map((listing) => (
+                      <div key={listing.id} className="hover:-translate-y-2 transition-all duration-300">
+                        <CropCard 
+                          listing={{
+                            ...listing, 
+                            onDelete: (id) => {
+                              if (window.confirm("Are you sure you want to delete this listing?")) {
+                                deleteListing(id);
+                              }
+                            },
+                            onEdit: (listing) => alert("Edit feature coming soon!") 
+                          }} 
+                          showContact={false} 
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -261,6 +337,23 @@ export default function FarmerDashboard() {
                     <span className="text-gray-500 text-sm">{t('totalListings')}</span>
                     <span className="font-medium text-gray-900">{myListings.length}</span>
                   </div>
+                </div>
+                
+                <div className="mt-10 pt-6 border-t border-gray-100">
+                  <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Account Actions</h4>
+                  <button
+                    onClick={() => {
+                      if (window.confirm("This will remove all your listings and saved items. Are you sure you want to reset everything?")) {
+                        import('../services/storageService').then(m => m.storageService.clearData());
+                      }
+                    }}
+                    className="w-full py-3 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors border border-red-100"
+                  >
+                    Reset All Marketplace Data
+                  </button>
+                  <p className="text-[10px] text-gray-400 mt-2 text-center uppercase tracking-tight">
+                    Removes all persisted listings and preferences from local storage
+                  </p>
                 </div>
               </div>
             </div>

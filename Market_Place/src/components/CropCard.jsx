@@ -60,41 +60,42 @@ export default function CropCard({ listing, showContact = true, showSave = false
               )}
             </button>
           )}
-          <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur px-3 py-1 rounded-full shadow">
-            <span className="text-green-800 font-bold text-lg">₹{listing.price}</span>
-            <span className="text-gray-500 text-xs">/{listing.unit === 'quintal' ? 'q' : 'kg'}</span>
+          <div className="absolute bottom-3 right-3 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-lg border border-white/30">
+            <span className="text-white font-black text-lg drop-shadow-md">₹{listing.price}</span>
+            <span className="text-white/80 text-xs font-bold">/{listing.unit === 'quintal' ? 'q' : 'kg'}</span>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-4 flex-1 flex flex-col gap-2">
+        <div className="p-5 flex-1 flex flex-col gap-3">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="font-bold text-gray-900 text-lg leading-tight">{listing.cropName}</h3>
+              <h3 className="font-black text-gray-900 text-xl tracking-tight leading-tight group-hover:text-green-700 transition-colors">{listing.cropName}</h3>
               {listing.variety && (
-                <p className="text-sm text-gray-500">{listing.variety}</p>
+                <p className="text-sm text-gray-400 font-bold uppercase tracking-widest mt-0.5">{listing.variety}</p>
               )}
             </div>
             {!showContact && (
-              <div className="flex items-center gap-1 text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
+              <div className="flex items-center gap-1 text-[10px] font-black text-gray-400 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100 uppercase tracking-tighter">
                 <Eye size={12} />
-                {listing.views || 0}
+                {listing.views || 0} VIEWS
               </div>
             )}
           </div>
 
-          <div className="space-y-1.5 text-sm text-gray-600 flex-1">
-            <div className="flex items-center gap-2">
-              <Scale size={14} className="text-green-600 shrink-0" />
-              <span>{listing.quantity} {listing.unit} {t('available') || 'Available'}</span>
+          <div className="space-y-2.5 text-[13px] text-gray-600 flex-1 font-medium">
+            <div className="flex items-center gap-3 bg-gray-50/50 p-2 rounded-xl border border-gray-100/50">
+              <Scale size={16} className="text-green-600 shrink-0" />
+              <span><span className="font-bold text-gray-900">{listing.quantity} {listing.unit}</span> {t('available') || 'Available'}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin size={14} className="text-green-600 shrink-0" />
-              <span>{listing.farmerLocation || listing.location}</span>
+            <div className="flex items-center gap-3 p-1">
+              <MapPin size={16} className="text-orange-500 shrink-0" />
+              <span className="font-bold text-gray-700">{listing.farmerLocation || listing.location}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Calendar size={14} className="text-green-600 shrink-0" />
-              <span>{t('harvestedOn') || 'Harvested'}: {listing.harvestDate}</span>
+            <div className="flex items-center gap-3 p-1">
+              <Calendar size={16} className="text-blue-500 shrink-0" />
+              <span className="text-gray-400 uppercase tracking-tighter text-[10px] font-black">{t('harvestedOn') || 'Harvested'}:</span>
+              <span className="font-bold text-gray-700">{listing.harvestDate}</span>
             </div>
           </div>
 

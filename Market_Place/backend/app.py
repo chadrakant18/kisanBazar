@@ -17,40 +17,48 @@ time.sleep(1)
 
 def predict_intent(text):
     text = text.lower()
-    # Check for Kannada keywords
-    if any(k in text for k in ['ಬೆಲೆ', 'ದರ', 'ರೇಟ್', 'price', 'rate', 'how much']):
-        return 'pricing'
-    elif any(k in text for k in ['ರೋಗ', 'ಕೀಟ', 'ಹುಳು', 'pest', 'disease', 'rot', 'insect', 'leaf']):
-        return 'pests'
-    elif any(k in text for k in ['ಯೋಜನೆ', 'ಸರ್ಕಾರ', 'ಸಬ್ಸಿಡಿ', 'scheme', 'subsidy', 'loan', 'government', 'pm-kisan']):
-        return 'schemes'
-    elif any(k in text for k in ['ಮಳೆ', 'ಹವಾಮಾನ', 'ವೆದರ್', 'weather', 'rain', 'forecast']):
-        return 'weather'
-    elif any(k in text for k in ['ಬೆಳೆ', 'ಬಿತ್ತನೆ', 'grow', 'plant', 'harvest', 'rice', 'paddy']):
-        return 'growing'
-    else:
-        return 'general'
+    # Comprehensive intent mapping with expanded keyword sets
+    intents = {
+        'pricing': ['ಬೆಲೆ', 'ದರ', 'ರೇಟ್', 'ಅಂದಾಜು', 'ಲಾಭ', 'ಮಾರುಕಟ್ಟೆ', 'ಮಾರಾಟ', 'price', 'rate', 'cost', 'market', 'how much', 'profit', 'value', 'sell', 'trading'],
+        'pests': ['ರೋಗ', 'ಕೀಟ', 'ಹುಳು', 'ಬರ', 'ಸರ', 'ಹಾನಿ', 'ಕೊಳೆ', 'ಚುಕ್ಕೆ', 'pest', 'disease', 'rot', 'insect', 'leaf', 'fungus', 'spray', 'pesticide', 'damage', 'infection', 'whitefly', 'aphids'],
+        'schemes': ['ಯೋಜನೆ', 'ಸರ್ಕಾರ', 'ಸಬ್ಸಿಡಿ', 'ಸಾಲ', 'ಅರ್ಜಿ', 'ಕಂತು', 'ಪರಿಹಾರ', 'ಭೀಮಾ', 'scheme', 'subsidy', 'loan', 'government', 'pm-kisan', 'kcc', 'insurance', 'pmfby', 'benefit', 'form', 'apply'],
+        'weather': ['ಮಳೆ', 'ಹವಾಮಾನ', 'ಬಿಸಿಲು', 'ಗಾಳಿ', 'ವೆದರ್', 'ಮೋಡ', 'ಮಿಂಚು', 'weather', 'rain', 'forecast', 'temperature', 'monsoon', 'cloud', 'humidity', 'storm'],
+        'growing': ['ಬೆಳೆ', 'ಬಿತ್ತನೆ', 'ಗೊಬ್ಬರ', 'ನೀರು', 'ಮಣ್ಣು', 'ಉಳುಮೆ', 'ತಳಿ', 'ಇಳುವರಿ', 'grow', 'plant', 'harvest', 'crop', 'soil', 'yield', 'fertilizer', 'irrigation', 'seeds', 'variety', 'cultivation'],
+        'contact': ['ಸಹಾಯ', 'ಸಂಪರ್ಕ', 'ಹೆಲ್ಪ್', 'ಹೆಲ್ಪ್‌ಲೈನ್', 'ನಂಬರ್', 'ಕರೆ', 'ಮಾಹಿತಿ', 'contact', 'help', 'helpline', 'number', 'support', 'call', 'info', 'emergency']
+    }
+    
+    # Simple score-based matching
+    scores = {intent: 0 for intent in intents}
+    for intent, keywords in intents.items():
+        for keyword in keywords:
+            if keyword in text:
+                scores[intent] += 1
+    
+    best_intent = max(scores, key=scores.get)
+    return best_intent if scores[best_intent] > 0 else 'general'
 
 def generate_chatbot_response(intent, text):
     is_kannada = any(char > '\u0C80' and char < '\u0CFF' for char in text)
     
     if is_kannada:
         responses = {
-            'pricing': "ಇಂದಿನ ಟೊಮೆಟೊ ಬೆಲೆ ₹15-20/kg ಮತ್ತು ರಾಗಿ ಬೆಲೆ ₹32-35/kg ಇದೆ. ನಮ್ಮ ಆಪ್ ಮೂಲಕ ನೀವು ನೇರವಾಗಿ ಮಾರಾಟ ಮಾಡಬಹುದು.",
-            'pests': "ಬೆಳೆಯಲ್ಲಿ ಕೀಟ ಬಾಧೆ ಕಂಡುಬಂದರೆ ಬೇವಿನ ಎಣ್ಣೆ ಸಿಂಪಡಿಸಿ. ಹೆಚ್ಚಿನ ವಿವರಗಳಿಗಾಗಿ ಕೃಷಿ ಇಲಾಖೆಯನ್ನು ಸಂಪರ್ಕಿಸಿ.",
-            'schemes': "ಸರ್ಕಾರದ ಪಿಎಂ-ಕಿಸಾನ್ ಯೋಜನೆಯಡಿ ವಾರ್ಷಿಕ ₹6,000 ಸಹಾಯಧನ ಸಿಗುತ್ತದೆ. ರೈತ ಸಂಪರ್ಕ ಕೇಂದ್ರದಲ್ಲಿ ಹೆಚ್ಚಿನ ಮಾಹಿತಿ ಪಡೆಯಿರಿ.",
-            'weather': "ಮುಂದಿನ 2 ದಿನಗಳಲ್ಲಿ ಸಾಧಾರಣ ಮಳೆಯಾಗುವ ಮುನ್ಸೂಚನೆ ಇದೆ. ಕೃಷಿ ಚಟುವಟಿಕೆಗಳನ್ನು ಜಾಗರೂಕತೆಯಿಂದ ಮಾಡಿ.",
-            'growing': "ಭತ್ತದ ಬೆಳೆಗೆ ಜೂನ್-ಜುಲೈ ತಿಂಗಳು ಬಿತ್ತನೆಗೆ ಸೂಕ್ತ ಸಮಯ. ಸರಿಯಾದ ಪ್ರಮಾಣದ ನೀರು ಮತ್ತು ಗೊಬ್ಬರ ಬಳಸಿ.",
-            'general': "ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ ಕೃಷಿ ಸಹಾಯಕ. ಬೆಲೆ, ರೋಗಗಳು, ಯೋಜನೆಗಳು ಅಥವಾ ಹವಾಮಾನದ ಬಗ್ಗೆ ಕೇಳಿ."
+            'pricing': "ಇಂದಿನ ಮಾರುಕಟ್ಟೆ ಅಪ್‌ಡೇಟ್: \n- ಟೊಮೆಟೊ (ಬೆಂಗಳೂರು): ₹18-26/kg \n- ರಾಗಿ: ₹3,400-3,800/ಕ್ವಿಂಟಲ್ \n- ಈರುಳ್ಳಿ: ₹2,200-2,500/ಕ್ವಿಂಟಲ್. \nಬೇಡಿಕೆ ಹೆಚ್ಚಿರುವುದರಿಂದ ಬೆಲೆಗಳು ಏರಿಕೆಯಾಗುವ ಸಾಧ್ಯತೆಯಿದೆ.",
+            'pests': "ಬೆಳೆಯಲ್ಲಿ ಕೀಟ/ರೋಗ ಬಾಧೆ ತಡೆಗಟ್ಟಲು: \n1. ಎಲೆಗಳ ಮೇಲೆ ಕಪ್ಪು ಚುಕ್ಕೆಗಳಿದ್ದರೆ 2 ಗ್ರಾಂ ಮ್ಯಾಂಕೋಜೆಬ್ ಬಳಸಿ. \n2. ರಸ ಹೀರುವ ಕೀಟಗಳಿಗೆ ಬೇವಿನ ಎಣ್ಣೆ (Neem Oil) ಅತ್ಯುತ್ತಮ. \n3. ಹೊಲದಲ್ಲಿ ನೀರು ನಿಲ್ಲದಂತೆ ಎಚ್ಚರವಹಿಸಿ.",
+            'schemes': "ಪ್ರಮುಖ ಸರ್ಕಾರಿ ಯೋಜನೆಗಳು: \n- PM-KISAN: ವರ್ಷಕ್ಕೆ ₹6,000 ನೇರ ವರ್ಗಾವಣೆ. \n- ಬೆಳೆ ವಿಮೆ (PMFBY): ಕೊನೆಯ ದಿನಾಂಕ ಹತ್ತಿರದಲ್ಲಿದೆ, ಕೂಡಲೇ ನೋಂದಾಯಿಸಿ. \n- ಕಿಸಾನ್ ಕ್ರೆಡಿಟ್ ಕಾರ್ಡ್: ಕಡಿಮೆ ಬಡ್ಡಿದರದಲ್ಲಿ ಸಾಲ ಸೌಲಭ್ಯ.",
+            'weather': "ಹವಾಮಾನ ಮುನ್ಸೂಚನೆ: \nಮುಂದಿನ 48 ಗಂಟೆಗಳಲ್ಲಿ ಸಾಧಾರಣದಿಂದ ಭಾರೀ ಮಳೆಯಾಗುವ ಸಾಧ್ಯತೆಯಿದೆ. ತೇವಾಂಶವು 75% ಕ್ಕಿಂತ ಹೆಚ್ಚಿರಲಿದೆ. ಕೀಟನಾಶಕ ಸಿಂಪಡಣೆಯನ್ನು ಸದ್ಯಕ್ಕೆ ಮುಂದೂಡಿ.",
+            'growing': "ಕೃಷಿ ಸಲಹೆಗಳು: \n- ಮಣ್ಣಿನ ಗುಣಮಟ್ಟ ಪರೀಕ್ಷಿಸಿ ಗೊಬ್ಬರ ಬಳಸಿ. \n- ಉತ್ತಮ ಇಳುವರಿಗಾಗಿ 'ಸೋನಾ ಮಸೂರಿ' ಅಥವಾ 'ಜಯ' ಭತ್ತದ ತಳಿಗಳನ್ನು ಬಳಸಿ. \n- ಹನಿ ನೀರಾವರಿ ಪದ್ಧತಿಯಿಂದ 40% ನೀರು ಉಳಿಸಬಹುದು.",
+            'contact': "ಸಹಾಯಕ್ಕಾಗಿ ಇವುಗಳನ್ನು ಸಂಪರ್ಕಿಸಿ: \n- ರೈತ ಸಹಾಯವಾಣಿ: 1800-425-3553 \n- ಕಿಸಾನ್ ಕಾಲ್ ಸೆಂಟರ್: 1551 \n- ನಿಮ್ಮ ಹತ್ತಿರದ ರೈತ ಸಂಪರ್ಕ ಕೇಂದ್ರ (RSK).",
+            'general': "ನಮಸ್ಕಾರ! ನಾನು ಕಿಸಾನ್ ಮಿತ್ರ. ನಾನು ನಿಮಗೆ ಬೆಳೆ ಬೆಲೆ, ಕೀಟ ನಿಯಂತ್ರಣ, ಮತ್ತು ಸರ್ಕಾರಿ ಯೋಜನೆಗಳ ಬಗ್ಗೆ ನಿಖರ ಮಾಹಿತಿ ನೀಡಬಲ್ಲೆ. ನೀವು ಏನನ್ನು ತಿಳಿಯಲು ಬಯಸುತ್ತೀರಿ?"
         }
     else:
         responses = {
-            'pricing': "Current market rate for Tomato is ₹15-20/kg and Ragi is ₹32-35/kg. Prices are trending upwards due to demand.",
-            'pests': "For common pests like aphids or leaf spots, I recommend using diluted Neem oil. Ensure proper drainage to avoid root rot.",
-            'schemes': "Current active schemes include PM-KISAN (₹6000/year) and PMFBY for crop insurance. Contact your local cooperative bank for loan assistance.",
-            'weather': "The weather forecast predicts moderate rainfall for the next 48 hours. Please avoid spraying pesticides during this time.",
-            'growing': "Rice (Paddy) is best grown in standing water condition. Ideal transplanting time is between June and August in the monsoon season.",
-            'general': "Hello! I am your AI assistant. How can I help you with your farming today? Ask me about pricing, pests, or schemes."
+            'pricing': "Market Intelligence Report: \n- Tomato (Kolar): ₹18-26/kg \n- Ragi: ₹3,400-3,800/quintal \n- Onion: ₹2,200-2,500/quintal. \nExpect a 5-10% price rise in the next week due to high demand.",
+            'pests': "Integrated Pest Management Tips: \n1. For Whitefly/Aphids, use 5ml Neem Oil per liter of water. \n2. For fungal infections, apply Copper Oxychloride (3g/L). \n3. Ensure proper crop rotation to break pest cycles.",
+            'schemes': "Active Schemes for You: \n- PM-KISAN: ₹6,000 annual support. \n- KCC (Kisan Credit Card): Loans at 4% effective interest rate. \n- PMFBY: Insurance covers post-harvest losses too.",
+            'weather': "Agri-Weather Forecast: \nExpect moderate thunderstorms in the next 48 hours. Humidity levels will be high (80%). Avoid fertilizer application until the weather clears.",
+            'growing': "Cultivation Expert Advice: \n- Test your soil pH before planting. \n- For high yield, use certified hybrid seeds. \n- Balanced NPK ratio (4:2:1) is recommended for most cereal crops.",
+            'contact': "Emergency Contacts: \n- Kisan Call Center: 1800-180-1551 (Toll-Free) \n- Agricultural Department: 1551 \n- Contact your local Grama One center for documentation.",
+            'general': "Hello! I am KisanMitra, your AI Farming Expert. I can help with market rates, pest diagnosis, or scheme eligibility. What is on your mind today?"
         }
     return responses.get(intent, responses['general'])
 
@@ -60,7 +68,16 @@ def chat():
     message = data.get('message', '')
     intent = predict_intent(message)
     response_text = generate_chatbot_response(intent, message)
-    return jsonify({"response": response_text, "intent": intent})
+    
+    # Simulate thinking time
+    import time
+    time.sleep(0.5)
+    
+    return jsonify({
+        "response": response_text, 
+        "intent": intent,
+        "language": "kn" if any(char > '\u0C80' and char < '\u0CFF' for char in message) else "en"
+    })
 
 @app.route('/api/verify-crop', methods=['POST'])
 def verify_crop():
